@@ -76,7 +76,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ detail: err.message || "Internal Server Error" });
 });
 
-const PORT = process.env.PORT || 8e3;
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://127.0.0.1:${PORT}`);
-});
+const PORT = process.env.PORT || 8000;
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Backend server running on http://127.0.0.1:${PORT}`);
+  });
+}
+
+export default app;

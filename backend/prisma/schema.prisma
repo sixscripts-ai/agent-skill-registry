@@ -1,0 +1,56 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Skill {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  tier        String
+  path        String
+  description String
+  trustTier   String
+  status      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProviderConfig {
+  id              Int      @id @default(autoincrement())
+  defaultProvider String   @default("local")
+  defaultModel    String   @default("none")
+  
+  // Storing stringified JSON for arbitrary provider settings and roles for simplicity
+  roles           String   @default("{}") // JSON string
+  providers       String   @default("{}") // JSON string
+  envStatus       String   @default("{}") // JSON string
+  
+  updatedAt       DateTime @updatedAt
+}
+
+model McpServerConfig {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  enabled       Boolean  @default(false)
+  purpose       String
+  trustTier     String
+  scope         String   @default("[]") // JSON array
+  envKey        String?
+  envConfigured Boolean?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RunHistory {
+  id            Int      @id @default(autoincrement())
+  command       String
+  exitCode      Int
+  durationMs    Int
+  ok            Boolean
+  stdoutPreview String
+  stderrPreview String
+  timestamp     DateTime @default(now())
+}
