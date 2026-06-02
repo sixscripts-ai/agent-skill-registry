@@ -74,7 +74,7 @@ function Dashboard() {
         </p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">Dashboard</h1>
         <p className="mt-1.5 text-sm text-slate-400">
-          Local-first cockpit for your universal AI skill registry.
+          Universal cockpit for your AI skill registry.
         </p>
       </div>
 
