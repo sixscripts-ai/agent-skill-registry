@@ -186,7 +186,7 @@ function Brand({ compact }: { compact?: boolean }) {
             Universal AI Skill Lab
           </span>
           <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-slate-500">
-            v2 · local-first
+            v2 · prod
           </span>
         </span>
       ) : null}
