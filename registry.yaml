@@ -107,3 +107,29 @@ skills:
     description: "Librarian knowledge: how providers, models, and roles are configured for different agent tasks without lock-in."
     trust_tier: T1
     status: active
+
+  # Additional core skill documentation (for richer Librarian context and registry browsing)
+  - name: system-audit
+    tier: atomic
+    path: shared/atomic/system-audit
+    description: "Runs a safe read-only audit of the current project directory."
+    trust_tier: T1
+    status: active
+  - name: security-gatekeeper
+    tier: governance
+    path: shared/governance/security-gatekeeper
+    description: "Applies G1-G4 verification gates before execution."
+    trust_tier: T4
+    status: active
+  - name: provider-router
+    tier: functional
+    path: shared/functional/provider-router
+    description: "Selects model providers by task role without vendor lock-in."
+    trust_tier: T2
+    status: active
+  - name: skill-creator
+    tier: acquisition
+    path: shared/acquisition/skill-creator
+    description: "Creates new SKILL.md packages after checks."
+    trust_tier: T3
+    status: active

@@ -4,8 +4,32 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pkg from '@prisma/client';
 import OpenAI from 'openai';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 // @ts-ignore
 const { PrismaClient } = pkg;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirnameLocal = path.dirname(__filename);
+// Compute project root robustly (works when cwd is backend/, root, or in Vercel serverless)
+function getProjectRoot(): string {
+  const candidates = [
+    path.resolve(process.cwd(), 'registry.yaml'),
+    path.resolve(process.cwd(), '..', 'registry.yaml'),
+    path.resolve(__dirnameLocal, '../../..', 'registry.yaml'), // backend/src/skillLabBackend.ts -> root
+    path.resolve(__dirnameLocal, '../..', 'registry.yaml'),    // if __dirname at backend/
+    path.resolve(__dirnameLocal, '..', 'registry.yaml'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      return path.dirname(c);
+    }
+  }
+  // Fallback to cwd (may be wrong in some deploys, but better than nothing)
+  return process.cwd();
+}
+const PROJECT_ROOT = getProjectRoot();
 
 // Use neon db if available
 const hasDb = !!process.env.DATABASE_URL;
@@ -150,15 +174,16 @@ export async function loadSkillBody(skillPath: string | null | undefined): Promi
   if (!skillPath) return '';
   try {
     const fs = await import('fs');
-    const path = await import('path');
+    const pth = await import('path'); // avoid shadow
+    const root = PROJECT_ROOT;
     const possible = [
-      path.resolve(process.cwd(), skillPath, 'SKILL.md'),
-      path.resolve(process.cwd(), skillPath),
-      path.resolve(process.cwd(), 'shared', skillPath.replace(/^shared\//, ''), 'SKILL.md'),
+      pth.resolve(root, skillPath, 'SKILL.md'),
+      pth.resolve(root, skillPath),
+      pth.resolve(root, 'shared', skillPath.replace(/^shared\//, ''), 'SKILL.md'),
     ];
-    for (const p of possible) {
-      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-        return fs.readFileSync(p, 'utf8');
+    for (const cand of possible) {
+      if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
+        return fs.readFileSync(cand, 'utf8');
       }
     }
   } catch {}
@@ -168,8 +193,8 @@ export async function loadSkillBody(skillPath: string | null | undefined): Promi
 export async function loadRegistryFromYaml(): Promise<RegistryPayload> {
   try {
     const fs = await import('fs');
-    const path = await import('path');
-    const yamlPath = path.resolve(process.cwd(), 'registry.yaml');
+    const pth = await import('path');
+    const yamlPath = pth.resolve(PROJECT_ROOT, 'registry.yaml');
     if (fs.existsSync(yamlPath)) {
       const content = fs.readFileSync(yamlPath, 'utf8');
       const parsed = YAML.parse(content);
@@ -213,13 +238,14 @@ export async function getLibrarianSkills() {
     });
     if (skills.length > 0) {
       const fs = await import('fs');
-      const path = await import('path');
+      const pth = await import('path');
+      const root = PROJECT_ROOT;
       return skills.map((s: any) => {
         let body = s.description || '';
         if (s.path) {
           const possiblePaths = [
-            path.resolve(process.cwd(), s.path, 'SKILL.md'),
-            path.resolve(process.cwd(), s.path),
+            pth.resolve(root, s.path, 'SKILL.md'),
+            pth.resolve(root, s.path),
           ];
           for (const p of possiblePaths) {
             if (fs.existsSync(p) && fs.statSync(p).isFile()) {
@@ -238,8 +264,9 @@ export async function getLibrarianSkills() {
   // Fallback: load from registry.yaml (for demo / no DB)
   try {
     const fs = await import('fs');
-    const path = await import('path');
-    const yamlPath = path.resolve(process.cwd(), 'registry.yaml');
+    const pth = await import('path');
+    const root = PROJECT_ROOT;
+    const yamlPath = pth.resolve(root, 'registry.yaml');
     if (fs.existsSync(yamlPath)) {
       const content = fs.readFileSync(yamlPath, 'utf8');
       const parsed = YAML.parse(content);
@@ -250,9 +277,9 @@ export async function getLibrarianSkills() {
         // Try to load full SKILL.md body from the path
         if (s.path) {
           const possiblePaths = [
-            path.resolve(process.cwd(), s.path, 'SKILL.md'),
-            path.resolve(process.cwd(), s.path),
-            path.resolve(process.cwd(), 'shared', s.path.replace('shared/', ''), 'SKILL.md'),
+            pth.resolve(root, s.path, 'SKILL.md'),
+            pth.resolve(root, s.path),
+            pth.resolve(root, 'shared', s.path.replace('shared/', ''), 'SKILL.md'),
           ];
           for (const p of possiblePaths) {
             if (fs.existsSync(p) && fs.statSync(p).isFile()) {
@@ -570,16 +597,27 @@ export async function getRunHistoryPayload(): Promise<{ entries: Array<RunHistor
 
 const LIBRARIAN_SYSTEM = `You are Librarian, the calm archivist and explainer of the Universal AI Skill Lab (omo.dev style agent).
 
-Rules:
-- Be precise, evidence-based, and cite specific skills by name from the provided context.
-- Structure: 1) What it is. 2) Why it exists in the lab. 3) How to use it (numbered steps). 4) Sources (list the librarian:* skills or registry items used).
+Core rules:
+- Be precise, evidence-based, and cite specific skills by exact name from the provided context.
+- Always use this structure:
+  1) What it is.
+  2) Why it exists in the lab.
+  3) How to use it (numbered steps).
+  4) Sources (list the exact librarian:* skills or registry items used).
 - Use omo.dev flavored language: "Librarian is consulting the boulder of institutional knowledge...", "Evidence-based with permalinks to the registry".
-- If the answer contains actionable commands (starting with "aiskill "), format them in markdown code blocks like:
+- **CRITICAL for actionable questions**: When the user asks "how do I...", "what command...", or anything that maps to an aiskill operation, you MUST include 1-2 ready-to-stage commands in clean markdown blocks. Format exactly like this:
+
 \`\`\`console
-aiskill some-command --flag value
+aiskill doctor
 \`\`\`
-- Offer 1-2 suggested next actions.
-- Never hallucinate skills that aren't in the context.`;
+
+\`\`\`console
+aiskill list --status active
+\`\`\`
+
+Never put commands in normal text — always use the \`\`\`console fence. If no command is relevant, skip this section.
+- Offer 1-2 suggested next actions in the UI.
+- Never hallucinate skills that are not in the context you were given.`;
 
 async function callLibrarianLLM(question: string, route: string, skillsContext: string, providers: any): Promise<string> {
   const { defaultProvider, defaultModel, providers: provs = {} } = providers || {};
@@ -589,10 +627,15 @@ async function callLibrarianLLM(question: string, route: string, skillsContext: 
   const userPrompt = `Current route in the app: ${route}
 User question: ${question}
 
-Relevant librarian knowledge skills from the live registry:
+Relevant librarian knowledge skills from the live registry (with full SKILL.md bodies where available):
 ${skillsContext || '(none loaded yet - use general knowledge)'}
 
-Respond in character as Librarian. Include stageable commands in \`\`\`console blocks if appropriate.`;
+Respond in character as Librarian.
+- Follow the structure and omo.dev tone exactly.
+- If the question is about actions, commands, "how do I", or "what command", you MUST output at least one (preferably 1-2) stageable command(s) in \`\`\`console blocks using the exact format shown in your system rules.
+- Cite the librarian:* sources you used.`;
+
+
 
   if (isOpenAI) {
     const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;

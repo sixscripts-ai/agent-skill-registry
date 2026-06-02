@@ -93,10 +93,11 @@ export function LibrarianPanel({ open, onClose }: LibrarianPanelProps) {
         payload: {
           tier: 'documentation',
           trustTier: 'T1',
-          description: content.slice(0, 300),
+          description: content.slice(0, 200),
+          body: content,  // full explanation for SKILL.md
         }
       });
-      toast('Saved as draft librarian skill. It will be picked up by Librarian after next sync/registry load.');
+      toast('Saved as draft librarian skill + SKILL.md. It will be picked up by Librarian after next sync (or immediately if DB is live).');
     } catch (e) {
       toast('Save attempted (may be mocked in demo)');
     }

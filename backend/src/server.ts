@@ -172,24 +172,52 @@ app.post("/api/skills/create", asyncHandler(async (req, res) => {
 app.post("/api/skills/draft", asyncHandler(async (req, res) => {
   const { name, payload } = req.body || {};
   const skillName = name || payload?.name || 'untitled-draft';
+  const tier = payload?.tier || 'functional';
+  const skillPath = `shared/${tier}/${skillName}`;
+
   const skill = await prisma.skill.upsert({
     where: { name: skillName },
     update: {
       description: payload?.description || '',
-      tier: payload?.tier || 'functional',
+      tier,
       trustTier: payload?.trustTier || 'T2',
       status: payload?.status || 'draft',
-      path: `shared/${payload?.tier || 'functional'}/${skillName}`,
+      path: skillPath,
     },
     create: {
       name: skillName,
       description: payload?.description || '',
-      tier: payload?.tier || 'functional',
+      tier,
       trustTier: payload?.trustTier || 'T2',
       status: payload?.status || 'draft',
-      path: `shared/${payload?.tier || 'functional'}/${skillName}`,
+      path: skillPath,
     }
   });
+
+  // For librarian:* skills, write the full SKILL.md body to disk so getLibrarianSkills can load it
+  if (skillName.startsWith('librarian:') && payload?.body) {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const fullPath = path.resolve(process.cwd(), skillPath, 'SKILL.md');
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      const mdContent = `---
+name: ${skillName}
+tier: documentation
+trust_tier: T1
+status: active
+---
+
+# ${skillName}
+
+${payload.body}
+`;
+      fs.writeFileSync(fullPath, mdContent);
+    } catch (e) {
+      console.warn('Could not write SKILL.md for saved librarian skill:', e);
+    }
+  }
+
   res.json({ ok: true, skill });
 }));
 
