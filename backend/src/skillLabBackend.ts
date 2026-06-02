@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import YAML from 'yaml'
 import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
