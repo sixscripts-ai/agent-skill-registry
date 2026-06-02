@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { TerminalSquare, Play, Trash2, Zap } from 'lucide-react'
 import { api, type CliResult } from '~/lib/api'
+import { LIBRARIAN, getLibrarianContextForRoute, buildLibrarianResponse, extractStageableCommands } from '~/lib/librarian'
 import { useApi } from '~/lib/useApi'
 import { cn, relTime, CHECK_TONE } from '~/lib/meta'
 import {
@@ -18,14 +19,17 @@ import {
 
 export const Route = createFileRoute('/console')({
   component: ConsolePage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    stage: typeof search.stage === 'string' ? search.stage : undefined,
+  }),
 })
 
 const PRESETS = [
   'aiskill doctor',
   'aiskill list',
-  'aiskill sync all',
-  'aiskill eval',
-  'aiskill run "Run a safe system audit."',
+  'explain dashboard',
+  'librarian how do I build a T4 skill?',
+  'what is governance?',
   'aiskill gate "ls -la"',
   'aiskill gate "sudo rm -rf /"',
 ]
@@ -33,17 +37,62 @@ const PRESETS = [
 function ConsolePage() {
   const toast = useToast()
   const [tab, setTab] = useState('cli')
-  const [input, setInput] = useState('aiskill doctor')
+  const [input, setInput] = useState('explain governance')
   const [output, setOutput] = useState('')
   const [last, setLast] = useState<CliResult | null>(null)
   const [busy, setBusy] = useState(false)
   const [results, setResults] = useState<CliResult[]>([])
+  const [stageableFromLibrarian, setStageableFromLibrarian] = useState<string[]>([])
   const logs = useApi(api.logs)
+
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+
+  // Consume "stage" search param from Librarian staging action
+  useEffect(() => {
+    if (search.stage) {
+      setInput(search.stage);
+      setTab('cli');
+      // clear the param so it doesn't re-stage on refresh
+      navigate({ to: '/console', search: { stage: undefined }, replace: true });
+    }
+  }, [search.stage]);
 
   const exec = async (command: string) => {
     if (busy || !command.trim()) return
+    setStageableFromLibrarian([]);
     setBusy(true)
     try {
+      const trimmed = command.trim()
+
+      // Idea #4: Console-native Librarian (terminal style, omo.dev agent feel)
+      if (/^(explain|librarian|what is|how do i|how to)/i.test(trimmed)) {
+        const route = '/console'
+        const contextKey = getLibrarianContextForRoute(route)
+        const base = (LIBRARIAN.baseKnowledge as any)[contextKey] || (LIBRARIAN.baseKnowledge as any).dashboard
+        const { text, sources } = buildLibrarianResponse(trimmed, route, base)
+
+        const fakeRes: CliResult = {
+          ok: true,
+          command: `librarian ${trimmed}`,
+          stdout: `Librarian: ${text}\n\nSources: ${sources?.join(' · ') || 'registry + live context'}`,
+          stderr: '',
+          exitCode: 0,
+          durationMs: 380,
+          timestamp: new Date().toISOString(),
+          status: 'librarian-response'
+        }
+        setLast(fakeRes)
+        setResults((r) => [fakeRes, ...r].slice(0, 20))
+        setOutput((prev) =>
+          `${prev ? prev + '\n\n' : ''}$ ${trimmed}\n${fakeRes.stdout}\n[exit ${fakeRes.exitCode} · ${fakeRes.durationMs}ms]`,
+        )
+        const extracted = extractStageableCommands(fakeRes.stdout || '');
+        setStageableFromLibrarian(extracted);
+        setBusy(false)
+        return
+      }
+
       const res = await api.runCli(command)
       setLast(res)
       setResults((r) => [res, ...r].slice(0, 20))
@@ -66,7 +115,7 @@ function ConsolePage() {
         icon={TerminalSquare}
         eyebrow="Operations"
         title="Console"
-        description="Run aiskill workflows in simulated runtime mode. Approved commands return realistic structured output — no shell is ever executed."
+        description="Run aiskill workflows or talk to Librarian (try: 'explain governance', 'librarian how do I use the builder?'). Evidence-based answers drawn from the live skill registry."
         actions={<Badge tone="amber" dot>simulated runtime mode</Badge>}
       />
 
@@ -97,8 +146,8 @@ function ConsolePage() {
                   data-testid="console-input"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="aiskill <command>"
-                  className="h-10 w-full bg-transparent font-mono text-sm text-sky-100 outline-none placeholder:text-slate-600"
+                  placeholder="aiskill <command>  or  explain <feature>  or  librarian how do I..."
+                  className="h-10 w-full bg-transparent font-mono text-sm text-cyan-100 outline-none placeholder:text-slate-600"
                 />
               </div>
               <Button type="submit" variant="primary" icon={Play} disabled={busy} testid="console-run">
@@ -109,6 +158,22 @@ function ConsolePage() {
             <div className="mt-4">
               <TerminalPanel text={output} empty="Run a command to see output here." />
             </div>
+
+            {/* Staging from Librarian responses in console (actionable "how do I" commands) */}
+            {stageableFromLibrarian.length > 0 && (
+              <div className="mt-2 p-2 border border-cyan-500/20 bg-cyan-500/5 rounded text-xs">
+                <div className="text-cyan-400 mb-1">Stageable commands from Librarian:</div>
+                {stageableFromLibrarian.map((cmd, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setInput(cmd)}
+                    className="block w-full text-left font-mono text-cyan-200 hover:bg-cyan-500/10 px-1 py-0.5 rounded"
+                  >
+                    ▶ {cmd}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {last ? (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -132,7 +197,7 @@ function ConsolePage() {
 
           <Card className="p-4">
             <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <Zap size={13} className="text-sky-300" /> Presets
+              <Zap size={13} className="text-cyan-300" /> Presets
             </p>
             <div className="flex flex-col gap-1.5">
               {PRESETS.map((p) => (
@@ -140,7 +205,7 @@ function ConsolePage() {
                   key={p}
                   data-testid={`preset-${p}`}
                   onClick={() => { setInput(p); void exec(p) }}
-                  className="truncate rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-left font-mono text-[12px] text-slate-300 transition-colors hover:border-sky-500/30 hover:text-white"
+                  className="truncate rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-left font-mono text-[12px] text-slate-300 transition-colors hover:border-cyan-500/30 hover:text-white"
                 >
                   {p}
                 </button>
@@ -177,7 +242,7 @@ function ConsolePage() {
               {results.map((r, i) => (
                 <div key={i} className="gp-panel-2 overflow-hidden">
                   <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-2">
-                    <span className="truncate font-mono text-[12px] text-sky-200">{r.command}</span>
+                    <span className="truncate font-mono text-[12px] text-cyan-200">{r.command}</span>
                     <Badge tone={r.ok ? 'emerald' : 'rose'}>exit {r.exitCode}</Badge>
                   </div>
                   <pre className="max-h-44 overflow-auto p-3 font-mono text-[11.5px] text-slate-400">{r.stdout || r.stderr}</pre>

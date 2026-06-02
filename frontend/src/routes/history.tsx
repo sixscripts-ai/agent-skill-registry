@@ -68,7 +68,7 @@ function HistoryPage() {
                 >
                   <ChevronDown size={15} className={cn('shrink-0 text-slate-500 transition-transform', expanded && 'rotate-180')} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-[13px] text-sky-200">{r.command}</p>
+                    <p className="truncate font-mono text-[13px] text-cyan-200">{r.command}</p>
                     <p className="mt-0.5 text-[11px] text-slate-500">
                       {relTime(r.timestamp)} · {r.durationMs}ms{r.skill ? ` · ${r.skill}` : ''} · {r.kind}
                     </p>

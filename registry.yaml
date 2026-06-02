@@ -75,3 +75,35 @@ skills:
     description: "Uses a separate critic provider to review high-impact changes."
     trust_tier: T3
     status: active
+
+  # Librarian knowledge skills (Idea #5) — the explainer agent reads these to answer "what is X and how do I use it?"
+  - name: librarian:dashboard
+    tier: documentation
+    path: shared/documentation/librarian-dashboard
+    description: "Librarian knowledge: what the Dashboard shows and the fastest ways to operate the lab from it."
+    trust_tier: T1
+    status: active
+  - name: librarian:builder
+    tier: documentation
+    path: shared/documentation/librarian-builder
+    description: "Librarian knowledge: how to author, validate, and promote new portable skills using the Builder."
+    trust_tier: T1
+    status: active
+  - name: librarian:governance
+    tier: documentation
+    path: shared/documentation/librarian-governance
+    description: "Librarian knowledge: the T1–T4 trust model, security gates, and when human approval is required."
+    trust_tier: T1
+    status: active
+  - name: librarian:console
+    tier: documentation
+    path: shared/documentation/librarian-console
+    description: "Librarian knowledge: using the Console for aiskill commands, natural language prompts, and talking directly to Librarian."
+    trust_tier: T1
+    status: active
+  - name: librarian:providers
+    tier: documentation
+    path: shared/documentation/librarian-providers
+    description: "Librarian knowledge: how providers, models, and roles are configured for different agent tasks without lock-in."
+    trust_tier: T1
+    status: active

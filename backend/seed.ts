@@ -14,14 +14,16 @@ import {
   getRegistryPayload,
   getProvidersPayload,
   getMcpPayload,
-  getRunHistoryPayload
+  getRunHistoryPayload,
+  loadRegistryFromYaml
 } from './src/skillLabBackend.js';
 
 async function main() {
-  console.log('Seeding Database from YAML configs...');
+  console.log('Seeding Database from YAML configs (source of truth for librarian:* seeds etc)...');
   
   // 1. Seed Skills
-  const registry = await getRegistryPayload();
+  // Load directly from yaml (source of truth) to populate DB
+  const registry = await loadRegistryFromYaml();
   for (const skill of registry.skills) {
     await prisma.skill.upsert({
       where: { name: skill.name },
@@ -42,12 +44,20 @@ async function main() {
       }
     });
   }
-  console.log(`✅ Seeded ${registry.skills.length} skills`);
+  console.log(`✅ Seeded ${registry.skills.length} skills (including any librarian:* explainer seeds from registry.yaml)`);
 
   // 2. Seed Providers
   const providers = await getProvidersPayload();
-  await prisma.providerConfig.create({
-    data: {
+  await prisma.providerConfig.upsert({
+    where: { id: 1 }, // simple, or use first
+    update: {
+      defaultProvider: providers.defaultProvider,
+      defaultModel: providers.defaultModel,
+      roles: JSON.stringify(providers.roles),
+      providers: JSON.stringify(providers.providers),
+      envStatus: JSON.stringify(providers.envStatus)
+    },
+    create: {
       defaultProvider: providers.defaultProvider,
       defaultModel: providers.defaultModel,
       roles: JSON.stringify(providers.roles),

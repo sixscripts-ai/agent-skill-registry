@@ -155,7 +155,7 @@ function Toggle({ label, on, onClick }: { label: string; on?: boolean; onClick: 
       <span className="text-[13px] text-slate-300">{label}</span>
       <button
         onClick={onClick}
-        className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-sky-500' : 'bg-white/10'}`}
+        className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-cyan-500' : 'bg-white/10'}`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
       </button>

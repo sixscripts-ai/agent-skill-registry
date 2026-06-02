@@ -77,11 +77,11 @@
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
-    --color-ink-950: #0a0c10;
-    --color-ink-925: #0c0f14;
-    --color-ink-900: #0e1218;
-    --color-ink-850: #12171f;
-    --color-ink-800: #161c25;
+    --color-ink-950: #0a0a0a;
+    --color-ink-925: #0c0c0c;
+    --color-ink-900: #111111;
+    --color-ink-850: #161616;
+    --color-ink-800: #1a1a1a;
   }
 }
 @layer base {
@@ -2051,7 +2051,7 @@
   }
   .gp-row:hover {
     background-color: rgba(255, 255, 255, 0.04);
-    border-color: rgba(56, 189, 248, 0.28);
+    border-color: rgba(103, 232, 249, 0.28); /* cyan-400 */
   }
   .gp-inset {
     background-color: #07090d;

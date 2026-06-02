@@ -79,4 +79,8 @@ export const api = {
   resetAdapters: () => post<any>('/danger/reset-adapters'),
   clearLogs: () => post<any>('/danger/clear-logs'),
   clearReports: () => post<any>('/danger/clear-reports'),
+
+  // Librarian explainer (#1 + #4 + #5)
+  librarianExplain: (payload: { question: string; route: string; context?: any }) =>
+    post<any>('/librarian/explain', payload),
 }

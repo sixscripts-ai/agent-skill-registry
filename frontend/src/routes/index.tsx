@@ -62,7 +62,7 @@ function Dashboard() {
     { label: 'Sync All', icon: RefreshCw, fn: async () => { await api.sync('all'); toast('Adapters synced'); adapters.refetch() } },
     { label: 'Run Eval', icon: FlaskConical, fn: async () => { await api.eval(); toast('Eval finished'); navigate({ to: '/evals' }) } },
     { label: 'Safe Audit', icon: ShieldCheck, fn: async () => { await api.runPrompt('Run a safe system audit.'); toast('Audit complete'); history.refetch() } },
-    { label: 'Open Console', icon: TerminalSquare, fn: async () => navigate({ to: '/console' }) },
+    { label: 'Open Console', icon: TerminalSquare, fn: async () => navigate({ to: '/console', search: { stage: undefined } as any }) },
     { label: 'Refresh Registry', icon: RotateCw, fn: async () => { registry.refetch(); toast('Registry refreshed') } },
   ]
 
@@ -114,7 +114,7 @@ function Dashboard() {
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-white">Skill lifecycle</h3>
-          <Link to="/skills" className="text-xs font-medium text-sky-300 hover:text-sky-200">
+              <Link to="/skills" className="text-xs font-medium text-cyan-300 hover:text-cyan-200">
             View registry →
           </Link>
         </div>
@@ -139,10 +139,10 @@ function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Build CTA */}
         <div className="lg:col-span-2">
-          <div className="relative overflow-hidden rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.08] via-ink-900 to-violet-500/[0.06] p-6 gp-grid-bg">
+            <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.08] via-ink-900 to-cyan-400/[0.06] p-6 gp-grid-bg">
             <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="max-w-md">
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-400">
                   <Wand2 size={12} /> Builder-first
                 </span>
                 <h3 className="mt-3 text-xl font-bold text-white">Build a New Skill</h3>
@@ -152,7 +152,7 @@ function Dashboard() {
                 </p>
               </div>
               <Link to="/builder">
-                <Button variant="primary" size="lg" icon={Wand2} testid="dashboard-open-builder">
+                <Button className="text-nowrap whitespace-nowrap" variant="primary" size="lg" icon={Wand2} testid="dashboard-open-builder">
                   Open Skill Builder
                 </Button>
               </Link>
@@ -185,7 +185,7 @@ function Dashboard() {
           subtitle="Latest simulated executions"
           className="lg:col-span-2"
           actions={
-            <Link to="/history" className="text-xs font-medium text-sky-300 hover:text-sky-200">
+            <Link to="/history" className="text-xs font-medium text-cyan-300 hover:text-cyan-200">
               All history →
             </Link>
           }
@@ -194,14 +194,14 @@ function Dashboard() {
             <EmptyState
               title="No runs yet"
               body="Console commands, syncs and evals will appear here."
-              actions={<Link to="/console"><Button size="sm">Open Console</Button></Link>}
+              actions={<Link to="/console" search={{ stage: undefined } as any}><Button size="sm">Open Console</Button></Link>}
             />
           ) : (
             <div className="space-y-2">
               {runs.slice(0, 6).map((r: any) => (
                 <div key={r.id} className="gp-row flex items-center justify-between gap-3 px-3.5 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-[12.5px] text-sky-200">{r.command}</p>
+                    <p className="truncate font-mono text-[12.5px] text-cyan-200">{r.command}</p>
                     <p className="mt-0.5 text-[11px] text-slate-500">{relTime(r.timestamp)} · {r.durationMs}ms</p>
                   </div>
                   <Badge tone={r.status === 'ok' ? 'emerald' : r.status === 'blocked' ? 'rose' : 'amber'}>
@@ -240,7 +240,7 @@ function Dashboard() {
       <SectionCard
         title="Adapter Status"
         subtitle="Universal skills compiled into host adapters"
-        actions={<Link to="/sync" className="text-xs font-medium text-sky-300 hover:text-sky-200">Manage →</Link>}
+                  actions={<Link to="/sync" className="text-xs font-medium text-cyan-300 hover:text-cyan-200">Manage →</Link>}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(adapters.data?.adapters ?? []).map((a: any) => (

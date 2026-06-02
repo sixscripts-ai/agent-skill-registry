@@ -3,6 +3,11 @@ description: Guidelines and best practices for building Convex projects, includi
 globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
 ---
 
+# Project Note
+This repository is a **TanStack Start + React + Express + Prisma** app (Universal AI Skill Lab / Registry).
+It is **NOT** a Convex project. The Convex guidelines below are from a template and do not apply to the current codebase.
+See README.md for actual architecture, env setup (especially AI_* for Librarian), seeding, and Librarian feature.
+
 # Convex guidelines
 ## Common mistakes to avoid
 - Do NOT use `useQuery` from `convex/react` — use `useSuspenseQuery` from `@tanstack/react-query` with `convexQuery` from `@convex-dev/react-query`.

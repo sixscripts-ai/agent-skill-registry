@@ -12,10 +12,12 @@ import {
   RotateCw,
   Zap,
   ChevronDown,
+  BookOpen,
 } from 'lucide-react'
 import { NAV, BOTTOM_NAV, cn } from '~/lib/meta'
 import { api } from '~/lib/api'
 import { Button, useToast } from '~/components/ui'
+import { LibrarianPanel } from '~/components/LibrarianPanel'
 
 function useActivePath() {
   const s = useRouterState()
@@ -91,7 +93,7 @@ function useQuickActions() {
       key: 'console',
       label: 'Open Console',
       icon: TerminalSquare,
-      run: () => navigate({ to: '/console' }),
+      run: () =>             navigate({ to: '/console', search: { stage: undefined } as any }),
     },
     {
       key: 'refresh',
@@ -144,7 +146,7 @@ function QuickActionsMenu() {
         }}
         className="flex h-9 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] font-medium text-slate-200"
       >
-        <Zap size={15} className="text-sky-300" />
+        <Zap size={15} className="text-cyan-300" />
         <span className="hidden sm:inline">Actions</span>
         <ChevronDown size={14} className="text-slate-500" />
       </button>
@@ -175,7 +177,7 @@ function QuickActionsMenu() {
 function Brand({ compact }: { compact?: boolean }) {
   return (
     <Link to="/" className="flex items-center gap-2.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-violet-600 text-white shadow-lg shadow-sky-500/20">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-400 text-white shadow-lg shadow-cyan-500/20">
         <Hexagon size={17} fill="currentColor" className="opacity-90" />
       </span>
       {!compact ? (
@@ -214,17 +216,17 @@ function NavSections({ onNavigate }: { onNavigate?: () => void }) {
                   data-testid={`nav-${item.short.toLowerCase()}`}
                   className={cn(
                     'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors',
-                    active
+                     active
                       ? 'bg-white/[0.07] text-white'
                       : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200',
-                  )}
+                   )}
                 >
                   {active ? (
-                    <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-sky-400" />
+                    <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-cyan-400" />
                   ) : null}
                   <Icon
                     size={16}
-                    className={active ? 'text-sky-300' : 'text-slate-500 group-hover:text-slate-300'}
+                    className={active ? 'text-cyan-300' : 'text-slate-500 group-hover:text-slate-300'}
                   />
                   {item.label}
                 </Link>
@@ -276,6 +278,7 @@ function HealthFooter() {
 /* --------------------------------------------------------------- AppShell */
 export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [librarianOpen, setLibrarianOpen] = useState(false)
   const pathname = useActivePath()
 
   // close mobile drawer on route change
@@ -286,8 +289,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-ink-950 text-slate-200">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/[0.06] bg-ink-925 lg:flex">
-        <div className="flex h-16 shrink-0 items-center border-b border-white/[0.06] px-5">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-ink-925 lg:flex">
+        <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-5">
           <Brand />
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-5">
@@ -299,7 +302,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/[0.06] bg-ink-925/90 px-3 backdrop-blur-md lg:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/10 bg-black/50 px-3 backdrop-blur-xl lg:hidden">
         <button
           data-testid="mobile-menu-btn"
           onClick={() => setDrawerOpen(true)}
@@ -308,7 +311,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Menu size={18} />
         </button>
         <Brand compact />
-        <QuickActionsMenu />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLibrarianOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+            data-testid="summon-librarian-mobile"
+            title="Librarian"
+          >
+            <BookOpen size={16} />
+          </button>
+          <QuickActionsMenu />
+        </div>
       </header>
 
       {/* Mobile drawer */}
@@ -345,13 +358,24 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main */}
       <div className="lg:pl-64">
         {/* Desktop quick-action bar */}
-        <div className="sticky top-0 z-20 hidden h-16 items-center justify-between border-b border-white/[0.06] bg-ink-950/80 px-6 backdrop-blur-md lg:flex">
+        <div className="sticky top-0 z-20 hidden h-16 items-center justify-between border-b border-white/10 bg-black/50 px-6 backdrop-blur-xl lg:flex">
           <div className="flex items-center gap-2 text-sm text-slate-400">
             <span className="font-mono text-xs text-slate-600">~/ai-skills</span>
           </div>
           <div className="flex items-center gap-3">
             <QuickActionsBar />
             <QuickActionsMenu />
+
+            {/* Summon Librarian — omo.dev style agent explainer (#1 + #5) */}
+            <button
+              onClick={() => setLibrarianOpen(true)}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 text-[13px] font-medium text-cyan-300 transition-colors hover:bg-cyan-500/20 hover:text-cyan-200"
+              data-testid="summon-librarian"
+              title="Summon Librarian — ask what anything does and how to use it"
+            >
+              <BookOpen size={15} />
+              <span className="hidden sm:inline">Librarian</span>
+            </button>
           </div>
         </div>
 
@@ -372,7 +396,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               data-testid={`bottomnav-${item.short.toLowerCase()}`}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
-                active ? 'text-sky-300' : 'text-slate-500',
+                active ? 'text-cyan-300' : 'text-slate-500',
               )}
             >
               <Icon size={19} />
@@ -381,6 +405,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           )
         })}
       </nav>
+
+      {/* Librarian Panel — Ideas #1 + #5 (contextual + registry-backed) */}
+      <LibrarianPanel open={librarianOpen} onClose={() => setLibrarianOpen(false)} />
     </div>
   )
 }

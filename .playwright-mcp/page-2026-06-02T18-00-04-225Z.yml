@@ -1,0 +1,458 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "Oh My OpenAgent" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e7]: Oh My OpenAgent
+          - navigation [ref=e8]:
+            - link "Features" [ref=e9] [cursor=pointer]:
+              - /url: /#features
+            - link "Agents" [ref=e10] [cursor=pointer]:
+              - /url: /#agents
+            - link "Docs" [ref=e11] [cursor=pointer]:
+              - /url: /docs
+            - link "Manifesto" [ref=e12] [cursor=pointer]:
+              - /url: /manifesto
+        - link "Star on GitHub" [ref=e14] [cursor=pointer]:
+          - /url: https://github.com/code-yeongyu/oh-my-openagent
+          - generic [ref=e15]:
+            - img [ref=e16]
+            - generic [ref=e18]: Star on GitHub
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - heading "The Best Agent Harness" [level=1] [ref=e26]
+            - paragraph [ref=e27]: 60.7k stars. 2.8M+ downloads. Battle-tested and production-proven.
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - img [ref=e30]
+              - generic [ref=e32]: 60.7k GitHub Stars
+            - generic [ref=e33]:
+              - img [ref=e34]
+              - generic [ref=e37]: 11 Specialized Agents
+            - generic [ref=e38]:
+              - img [ref=e39]
+              - generic [ref=e42]: 2.8M+ Total Downloads
+            - generic [ref=e43]:
+              - img [ref=e44]
+              - generic [ref=e47]: 533.9k Monthly Downloads
+            - generic [ref=e48]:
+              - img [ref=e49]
+              - generic [ref=e53]: 54+ Lifecycle Hooks
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - generic [ref=e58]: $
+              - generic [ref=e59]: bunx oh-my-openagent install
+            - button "Copy install command" [ref=e60]:
+              - img
+          - generic [ref=e61]:
+            - link "Get Started" [ref=e62] [cursor=pointer]:
+              - /url: /docs#installation
+              - button "Get Started" [ref=e63]
+            - link "View on GitHub" [ref=e64] [cursor=pointer]:
+              - /url: https://github.com/code-yeongyu/oh-my-openagent
+              - button "View on GitHub" [ref=e65]:
+                - img
+                - text: View on GitHub
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]: The Magic Word
+            - heading "ulw" [level=2] [ref=e71]
+            - generic [ref=e72]:
+              - heading "Type Three Letters. Walk Away." [level=3] [ref=e73]
+              - paragraph [ref=e74]: "Ultra Work mode triggers maximum precision: auto-planning, deep research, parallel agents, and self-correction loops. The system doesn't stop until it's done. You don't babysit."
+            - generic [ref=e75]:
+              - generic [ref=e76]: Auto-Planning
+              - generic [ref=e77]: Deep Research
+              - generic [ref=e78]: Self-Correction
+              - generic [ref=e79]: Parallel Agents
+            - paragraph [ref=e80]: Zero intervention. Full autonomy. Just results.
+          - generic [ref=e82]:
+            - generic [ref=e87]: sisyphus — -zsh — 80x24
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - generic [ref=e90]: $
+                - generic [ref=e91]: ~
+                - generic [ref=e92]: _
+              - generic [ref=e93]:
+                - generic [ref=e94]: Scanning codebase...
+                - generic [ref=e95]: Launching 3 explore agents...
+                - generic [ref=e96]: Building execution plan...
+                - generic [ref=e97]: Deploying 4 parallel agents...
+                - generic [ref=e98]: Running verification suite...
+              - generic [ref=e99]:
+                - generic [ref=e100]: ok
+                - generic [ref=e101]: Done. 847 lines changed, 0 issues.
+              - generic [ref=e102]:
+                - generic [ref=e103]: $
+                - generic [ref=e104]: ~
+                - generic [ref=e105]: _
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]: Primary Orchestrator
+            - generic [ref=e112]: Claude Opus 4.7 Max
+          - heading "Sisyphus" [level=2] [ref=e113]
+          - heading "The CTO Who Never Sleeps" [level=3] [ref=e114]
+          - paragraph [ref=e115]: Named after the mythological figure rolling his boulder uphill forever. Sisyphus parses implicit requirements, adapts to your codebase's maturity, and delegates to specialists. Interrupted? The boulder system resumes exactly where you left off.
+          - generic [ref=e116]:
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - generic [ref=e120]: PHASE 1
+                - generic [ref=e121]: Intent Gate
+              - paragraph [ref=e123]: Parses what you meant, not just what you typed
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - generic [ref=e127]: PHASE 2
+                - generic [ref=e128]: Codebase Assessment
+              - paragraph [ref=e130]: Maps your architecture before touching a line
+            - generic [ref=e132]:
+              - generic [ref=e133]:
+                - generic [ref=e134]: PHASE 3
+                - generic [ref=e135]: Smart Delegation
+              - paragraph [ref=e137]: Routes to the right specialist agent
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - generic [ref=e141]: PHASE 4
+                - generic [ref=e142]: Independent Verification
+              - paragraph [ref=e144]: Trusts nothing. Verifies everything.
+          - generic [ref=e147]:
+            - img [ref=e149]
+            - generic [ref=e151]:
+              - heading "Session Continuity" [level=4] [ref=e152]
+              - paragraph [ref=e153]: Active work tracked in boulder.json. Power outage? System crash? Doesn't matter. Pick up exactly where you stopped.
+        - generic [ref=e155]:
+          - generic [ref=e156]:
+            - generic [ref=e157]: Orchestration Workflow
+            - heading "Think, Then Act" [level=2] [ref=e158]
+            - paragraph [ref=e159]: Planning and Execution Are Different Jobs
+          - generic [ref=e160]:
+            - generic [ref=e162]:
+              - generic [ref=e163]:
+                - generic [ref=e164]:
+                  - img [ref=e166]
+                  - generic [ref=e174]: Claude Opus 4.7 Max
+                - generic [ref=e175]: Prometheus
+                - generic [ref=e176]: Strategic Planner
+              - generic [ref=e177]:
+                - paragraph [ref=e178]: The architect. Interviews you, explores your codebase, and creates detailed battle plans. Never writes code. Uses Metis and Momus as quality gates.
+                - list [ref=e179]:
+                  - listitem [ref=e180]:
+                    - img [ref=e181]
+                    - text: Intelligent interview mode
+                  - listitem [ref=e183]:
+                    - img [ref=e184]
+                    - text: Multi-agent codebase exploration
+                  - listitem [ref=e186]:
+                    - img [ref=e187]
+                    - text: Gap analysis with Metis
+                  - listitem [ref=e189]:
+                    - img [ref=e190]
+                    - text: Ruthless review with Momus
+            - generic [ref=e193]:
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - img [ref=e197]
+                  - generic [ref=e201]: Claude Sonnet 4.6
+                - generic [ref=e202]: Atlas
+                - generic [ref=e203]: Master Executor
+              - generic [ref=e204]:
+                - paragraph [ref=e205]: The builder. Reads verified plans, delegates to specialized agents via category+skills system. Tracks learnings across tasks. Verifies independently — never trusts subagent claims.
+                - list [ref=e206]:
+                  - listitem [ref=e207]:
+                    - img [ref=e208]
+                    - text: Intent-based task routing
+                  - listitem [ref=e210]:
+                    - img [ref=e211]
+                    - text: Wisdom accumulation across tasks
+                  - listitem [ref=e213]:
+                    - img [ref=e214]
+                    - text: Boulder session continuity
+                  - listitem [ref=e216]:
+                    - img [ref=e217]
+                    - text: Independent result verification
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - generic [ref=e223]:
+                  - generic [ref=e224]: "1"
+                  - generic [ref=e225]: Describe your work to Prometheus
+                - img [ref=e226]
+              - generic [ref=e228]:
+                - generic [ref=e229]:
+                  - generic [ref=e230]: "2"
+                  - generic [ref=e231]: Metis analyzes for gaps
+                - img [ref=e232]
+              - generic [ref=e234]:
+                - generic [ref=e235]:
+                  - generic [ref=e236]: "3"
+                  - generic [ref=e237]: Momus validates ruthlessly
+                - img [ref=e238]
+              - generic [ref=e240]:
+                - generic [ref=e241]:
+                  - generic [ref=e242]: "4"
+                  - generic [ref=e243]: Atlas delegates to specialists
+                - img [ref=e244]
+              - generic [ref=e247]:
+                - generic [ref=e248]: "5"
+                - generic [ref=e249]: Independent verification on everything
+            - paragraph [ref=e250]: The planner doesn't code. The executor follows verified plans. Intelligence lives in the system, not individual agents.
+        - generic [ref=e254]:
+          - generic [ref=e255]:
+            - generic [ref=e256]: Deep Worker
+            - generic [ref=e257]: GPT 5.5 Medium
+          - heading "Hephaestus" [level=2] [ref=e258]
+          - heading "Give Him a Goal, Not a Recipe" [level=3] [ref=e259]
+          - paragraph [ref=e260]: Named after the Greek god of the forge. Methodical, thorough, obsessive. Fires 2-5 parallel explore agents before writing any code. Built for deep architectural reasoning, complex debugging, and cross-domain synthesis.
+          - generic [ref=e261]:
+            - generic [ref=e263]:
+              - generic [ref=e264]: "01"
+              - paragraph [ref=e265]: EXPLORE — Map the terrain
+            - generic [ref=e267]:
+              - generic [ref=e268]: "02"
+              - paragraph [ref=e269]: PLAN — Chart the course
+            - generic [ref=e271]:
+              - generic [ref=e272]: "03"
+              - paragraph [ref=e273]: DECIDE — Commit to the path
+            - generic [ref=e275]:
+              - generic [ref=e276]: "04"
+              - paragraph [ref=e277]: EXECUTE — Build with precision
+            - generic [ref=e279]:
+              - generic [ref=e280]: "05"
+              - paragraph [ref=e281]: VERIFY — Prove it works
+          - paragraph [ref=e282]: For when good enough isn't.
+        - generic [ref=e286]:
+          - generic [ref=e287]:
+            - generic [ref=e288]: NEW · v4.0
+            - generic [ref=e289]: opt-in
+          - heading "Team Mode" [level=2] [ref=e290]
+          - heading "Multiple Agents. Side-by-Side. In Parallel." [level=3] [ref=e291]
+          - paragraph [ref=e292]: A lead agent orchestrates a team of category-specialized members, all running in parallel and communicating through dedicated tools. Watch every member work simultaneously in tmux. Opt-in — flip team_mode.enabled and restart.
+          - generic [ref=e293]:
+            - generic [ref=e295]:
+              - generic [ref=e296]:
+                - img [ref=e298]
+                - generic [ref=e303]: Lead Orchestration
+              - paragraph [ref=e305]: One coordinator. Multiple specialists. Real-time messaging via team_send_message and team_task_create.
+            - generic [ref=e307]:
+              - generic [ref=e308]:
+                - img [ref=e310]
+                - generic [ref=e315]: True Parallelism
+              - paragraph [ref=e317]: Up to 8 members work simultaneously. No waiting, no queues — every angle covered at once.
+            - generic [ref=e319]:
+              - generic [ref=e320]:
+                - img [ref=e322]
+                - generic [ref=e324]: Tmux Visualization
+              - paragraph [ref=e326]: Focus and grid windows let you zoom into one teammate without losing the bigger picture.
+            - generic [ref=e328]:
+              - generic [ref=e329]:
+                - img [ref=e331]
+                - generic [ref=e333]: team_* Tool Family
+              - paragraph [ref=e335]: 12 dedicated tools (team_create, team_status, team_send_message, ...) gated behind team_mode.enabled.
+          - generic [ref=e336]:
+            - img [ref=e337]
+            - generic [ref=e340]: Powered by Team Mode
+          - generic [ref=e342]:
+            - generic [ref=e344]:
+              - generic [ref=e346]:
+                - img [ref=e348]
+                - generic [ref=e353]: hyperplan
+              - paragraph [ref=e355]: 5 hostile agents tear apart your plan from orthogonal angles before a single line of code is written.
+            - generic [ref=e357]:
+              - generic [ref=e359]:
+                - img [ref=e361]
+                - generic [ref=e363]: security-research
+              - paragraph [ref=e365]: 3 vulnerability hunters + 2 PoC engineers audit your codebase. Severity calibrated by actual exploitability.
+          - generic [ref=e366]:
+            - code [ref=e367]: team_mode.enabled = true → restart opencode
+            - paragraph [ref=e368]: Off by default. Devastating when on.
+        - generic [ref=e370]:
+          - generic [ref=e371]:
+            - heading "Specialized Agents" [level=2] [ref=e372]
+            - paragraph [ref=e373]: Five built-in agents for common workflows. Plus a dynamic system that assembles custom agents on demand.
+          - generic [ref=e374]:
+            - generic [ref=e376]:
+              - generic [ref=e377]:
+                - generic [ref=e378]:
+                  - img [ref=e380]
+                  - generic [ref=e383]: GPT 5.5 High
+                - generic [ref=e384]: Oracle
+                - generic [ref=e385]: Architecture Consultant
+              - paragraph [ref=e387]: Complex debugging and architectural decisions. When the path forward isn't obvious.
+            - generic [ref=e389]:
+              - generic [ref=e390]:
+                - generic [ref=e391]:
+                  - img [ref=e393]
+                  - generic [ref=e396]: GPT 5.4 Mini Fast
+                - generic [ref=e397]: Librarian
+                - generic [ref=e398]: Docs & Code Search
+              - paragraph [ref=e400]: Finds real GitHub examples and official docs. Evidence-based, with permalinks.
+            - generic [ref=e402]:
+              - generic [ref=e403]:
+                - generic [ref=e404]:
+                  - img [ref=e406]
+                  - generic [ref=e410]: GPT 5.4 Mini Fast
+                - generic [ref=e411]: Explore
+                - generic [ref=e412]: Codebase Grep
+              - paragraph [ref=e414]: Blazing fast codebase search. Cheap, parallel, always background.
+            - generic [ref=e416]:
+              - generic [ref=e417]:
+                - generic [ref=e418]:
+                  - img [ref=e420]
+                  - generic [ref=e422]: Claude Sonnet 4.6
+                - generic [ref=e423]: Metis
+                - generic [ref=e424]: Plan Consultant
+              - paragraph [ref=e426]: Catches ambiguities in plans before they become production bugs.
+            - generic [ref=e428]:
+              - generic [ref=e429]:
+                - generic [ref=e430]:
+                  - img [ref=e432]
+                  - generic [ref=e434]: GPT 5.5 xHigh
+                - generic [ref=e435]: Momus
+                - generic [ref=e436]: Plan Reviewer
+              - paragraph [ref=e438]: Ruthless validation. Only approves when the plan is bulletproof.
+            - generic [ref=e440]:
+              - generic [ref=e441]:
+                - generic [ref=e443]: Assembled for the task at hand
+                - generic [ref=e444]: Dynamic Agent
+                - generic [ref=e445]: Matches your request to the right model, loads the necessary skills, and builds an agent in real-time.
+              - generic [ref=e447]:
+                - generic [ref=e448]:
+                  - heading "Category Routing" [level=3] [ref=e449]
+                  - generic [ref=e450]:
+                    - generic [ref=e451]:
+                      - generic [ref=e452]: visual-engineering
+                      - img [ref=e453]
+                      - generic [ref=e455]: Gemini 3.1 Pro
+                    - generic [ref=e456]:
+                      - generic [ref=e457]: ultrabrain
+                      - img [ref=e458]
+                      - generic [ref=e460]: GPT 5.5 xHigh
+                    - generic [ref=e461]:
+                      - generic [ref=e462]: artistry
+                      - img [ref=e463]
+                      - generic [ref=e465]: Gemini 3.1 Pro
+                    - generic [ref=e466]:
+                      - generic [ref=e467]: quick
+                      - img [ref=e468]
+                      - generic [ref=e470]: GPT 5.4 Mini
+                    - generic [ref=e471]:
+                      - generic [ref=e472]: deep
+                      - img [ref=e473]
+                      - generic [ref=e475]: GPT 5.5 Medium
+                    - generic [ref=e476]:
+                      - generic [ref=e477]: writing
+                      - img [ref=e478]
+                      - generic [ref=e480]: Kimi K2.5
+                    - generic [ref=e481]:
+                      - generic [ref=e482]: git
+                      - img [ref=e483]
+                      - generic [ref=e485]: Claude Haiku 4.5
+                - generic [ref=e486]:
+                  - heading "Skill Injection" [level=3] [ref=e487]
+                  - generic [ref=e488]:
+                    - generic [ref=e489]:
+                      - img [ref=e490]
+                      - generic [ref=e492]: playwright
+                    - generic [ref=e493]:
+                      - img [ref=e494]
+                      - generic [ref=e496]: git-master
+                    - generic [ref=e497]:
+                      - img [ref=e498]
+                      - generic [ref=e500]: frontend-ui-ux
+                    - generic [ref=e501]:
+                      - img [ref=e502]
+                      - generic [ref=e504]: team-mode
+                  - paragraph [ref=e506]: "\"The right model + right expertise, every time.\""
+        - generic [ref=e508]:
+          - generic [ref=e509]:
+            - heading "Built Different" [level=2] [ref=e510]
+            - paragraph [ref=e511]: Design decisions that actually matter.
+          - generic [ref=e512]:
+            - generic [ref=e514]:
+              - generic [ref=e515]:
+                - img [ref=e517]
+                - generic [ref=e521]: Specialization
+              - paragraph [ref=e523]: Each agent does one thing exceptionally well. No jacks of all trades.
+            - generic [ref=e525]:
+              - generic [ref=e526]:
+                - img [ref=e528]
+                - generic [ref=e530]: Trust But Verify
+              - paragraph [ref=e532]: Orchestrator runs independent verification on everything. Subagents don't get a free pass.
+            - generic [ref=e534]:
+              - generic [ref=e535]:
+                - img [ref=e537]
+                - generic [ref=e539]: Wisdom Accumulation
+              - paragraph [ref=e541]: Learnings from each task passed to all subsequent tasks. The system gets smarter as it works.
+            - generic [ref=e543]:
+              - generic [ref=e544]:
+                - img [ref=e546]
+                - generic [ref=e548]: Model Optimization
+              - paragraph [ref=e550]: Expensive models for planning and complex decisions. Cheap models for routine work. Maximum output per dollar.
+            - generic [ref=e552]:
+              - generic [ref=e553]:
+                - img [ref=e555]
+                - generic [ref=e559]: Category System
+              - paragraph [ref=e561]: Intent-based routing. Say what you need — ultrabrain, visual-engineering, quick — and the right model handles it.
+            - generic [ref=e563]:
+              - generic [ref=e564]:
+                - img [ref=e566]
+                - generic [ref=e568]: Session Continuity
+              - paragraph [ref=e570]: "Boulder system: interrupted work resumes exactly where it stopped. Zero context loss."
+        - generic [ref=e572]:
+          - heading "What Devs Actually Say" [level=2] [ref=e574]
+          - generic [ref=e575]:
+            - generic [ref=e578]:
+              - img [ref=e580]
+              - paragraph [ref=e582]: “It made me cancel my Cursor subscription. Unbelievable things are happening in the open source community.”
+              - paragraph [ref=e583]: — Arthur Guiot
+            - generic [ref=e586]:
+              - img [ref=e588]
+              - paragraph [ref=e590]: “If Claude Code does in 7 days what a human does in 3 months, Sisyphus does it in 1 hour.”
+              - paragraph [ref=e591]: — B, Quant Researcher
+            - generic [ref=e594]:
+              - img [ref=e596]
+              - paragraph [ref=e598]: “Knocked out 8000 eslint warnings with Oh My Opencode, just in a day.”
+              - paragraph [ref=e599]: — Jacob Ferrari
+            - generic [ref=e602]:
+              - img [ref=e604]
+              - paragraph [ref=e606]: “use oh-my-openagent, you will never go back”
+              - paragraph [ref=e607]: — d0t3ch
+            - generic [ref=e610]:
+              - img [ref=e612]
+              - paragraph [ref=e614]: “You guys should pull this into core and recruit him. Seriously. It's really, really, really good.”
+              - paragraph [ref=e615]: — Henning Kilset
+            - generic [ref=e618]:
+              - img [ref=e620]
+              - paragraph [ref=e622]: “Oh My OpenCode Is Actually Insane”
+              - paragraph [ref=e623]: — Darren Builds AI (YouTube)
+        - generic [ref=e629]:
+          - heading "Stop Writing Boilerplate" [level=2] [ref=e630]
+          - paragraph [ref=e631]: Install Oh My OpenAgent and let the agents handle it. Your first ulw command is 30 seconds away.
+          - generic [ref=e633]:
+            - generic [ref=e634]: $
+            - text: bunx oh-my-openagent install
+          - generic [ref=e635]:
+            - link "Install Now" [ref=e636] [cursor=pointer]:
+              - /url: https://github.com/code-yeongyu/oh-my-openagent
+              - button "Install Now" [ref=e637]
+            - link "Read the Docs" [ref=e638] [cursor=pointer]:
+              - /url: /docs
+              - button "Read the Docs" [ref=e639]
+    - contentinfo [ref=e640]:
+      - generic [ref=e642]:
+        - generic [ref=e643]:
+          - generic [ref=e644]: Oh My OpenAgent
+          - paragraph [ref=e645]: © 2026 Oh My OpenAgent. Open source under SUL-1.0.
+        - generic [ref=e646]:
+          - link "GitHub" [ref=e647] [cursor=pointer]:
+            - /url: https://github.com/code-yeongyu/oh-my-openagent
+          - link "Discord" [ref=e648] [cursor=pointer]:
+            - /url: https://discord.gg/PUwSMR9XNk
+          - link "Documentation" [ref=e649] [cursor=pointer]:
+            - /url: /en/docs
+          - link "Manifesto" [ref=e650] [cursor=pointer]:
+            - /url: /en/manifesto
+  - alert [ref=e651]

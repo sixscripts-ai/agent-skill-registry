@@ -418,7 +418,7 @@ export function SkillBuilder() {
                 className="gp-input w-full px-3 py-2.5 text-sm"
               />
               {form.name ? (
-                <p className="mt-1.5 font-mono text-xs text-sky-300/80">
+                <p className="mt-1.5 font-mono text-xs text-cyan-300/80">
                   shared/{form.tier}/{slugify(form.name) || '…'}
                 </p>
               ) : null}
@@ -472,7 +472,7 @@ export function SkillBuilder() {
                       form.trustTier === t
                         ? t === 'T4'
                           ? 'border-rose-500/50 bg-rose-500/15 text-rose-200'
-                          : 'border-sky-500/50 bg-sky-500/15 text-sky-200'
+                           : 'border-cyan-500/40 bg-cyan-500/15 text-cyan-200'
                         : 'border-white/10 bg-white/[0.02] text-slate-400 hover:text-slate-200',
                     )}
                   >
@@ -652,7 +652,7 @@ export function SkillBuilder() {
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <Sparkles size={14} className="text-sky-300" />
+            <Sparkles size={14} className="text-cyan-300" />
             <span className="font-mono text-xs text-slate-400">SKILL.md preview</span>
           </div>
           <CopyButton value={skillMd} />
@@ -709,7 +709,7 @@ export function SkillBuilder() {
                   className={cn(
                     'flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-[13px] font-medium transition-colors xl:w-full',
                     active
-                      ? 'border-sky-500/40 bg-sky-500/10 text-white'
+                      ? 'border-cyan-500/30 bg-cyan-500/10 text-white'
                       : done
                         ? 'border-white/[0.06] bg-white/[0.02] text-slate-300'
                         : 'border-white/[0.06] bg-transparent text-slate-500 hover:text-slate-300',
@@ -718,7 +718,7 @@ export function SkillBuilder() {
                   <span
                     className={cn(
                       'flex h-6 w-6 items-center justify-center rounded-lg text-[11px]',
-                      active ? 'bg-sky-500 text-ink-950' : done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/[0.05] text-slate-500',
+                      active ? 'bg-cyan-500 text-ink-950' : done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/[0.05] text-slate-500',
                     )}
                   >
                     {done ? <Check size={13} /> : <Icon size={13} />}
@@ -733,7 +733,7 @@ export function SkillBuilder() {
         {/* Form */}
         <Card className="p-5 sm:p-6">
           <div className="mb-5 border-b border-white/[0.06] pb-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-400/80">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-400/80">
               Step {step + 1} of {STEPS.length}
             </p>
             <h2 className="mt-1 text-lg font-bold text-white">{STEPS[step].label}</h2>

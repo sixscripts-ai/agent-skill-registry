@@ -29,3 +29,6 @@ app.config.timestamp_*.js
 dist/
 frontend/dist/
 backend/dist/
+
+# Playwright
+/playwright/.auth/

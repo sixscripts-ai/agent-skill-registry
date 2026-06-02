@@ -56,7 +56,7 @@ export function Button({
 }) {
   const variants: Record<BtnVariant, string> = {
     primary:
-      'bg-sky-500 text-ink-950 hover:bg-sky-400 border border-sky-400 font-semibold shadow-[0_1px_0_rgba(255,255,255,0.15)_inset]',
+      'bg-cyan-500 text-ink-950 hover:bg-cyan-400 border border-cyan-400 font-semibold shadow-[0_1px_0_rgba(255,255,255,0.15)_inset]',
     secondary:
       'bg-white/[0.04] text-slate-200 border border-white/10 hover:bg-white/[0.08] hover:border-white/20',
     ghost: 'text-slate-300 hover:bg-white/[0.06] border border-transparent',
@@ -152,13 +152,13 @@ export function PageHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex items-start gap-3.5">
         {Icon ? (
-          <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-sky-300 sm:flex">
+          <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-cyan-300 sm:flex">
             <Icon size={20} />
           </div>
         ) : null}
         <div>
           {eyebrow ? (
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-400/80">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-400/80">
               {eyebrow}
             </p>
           ) : null}
@@ -290,7 +290,7 @@ export function EmptyState({
 export function LoadingState({ label = 'Loading…' }: { label?: string }) {
   return (
     <div className="flex items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] px-4 py-10 text-sm text-slate-400">
-      <Loader2 size={16} className="animate-spin text-sky-400" />
+      <Loader2 size={16} className="animate-spin text-cyan-400" />
       {label}
     </div>
   )
@@ -417,7 +417,7 @@ export function TerminalPanel({
               className={cn(
                 'whitespace-pre-wrap break-words',
                 isCmd
-                  ? 'font-semibold text-sky-300'
+                  ? 'font-semibold text-cyan-300'
                   : isErr
                     ? 'text-rose-300'
                     : isOk
@@ -591,7 +591,7 @@ export function ConfirmDialog({
           <span
             className={cn(
               'flex h-9 w-9 items-center justify-center rounded-lg',
-              danger ? 'bg-rose-500/15 text-rose-300' : 'bg-sky-500/15 text-sky-300',
+              danger ? 'bg-rose-500/15 text-rose-300' : 'bg-cyan-500/15 text-cyan-300',
             )}
           >
             {danger ? <AlertTriangle size={18} /> : <Info size={18} />}

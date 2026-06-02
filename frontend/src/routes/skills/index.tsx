@@ -192,8 +192,8 @@ function SkillRow({ skill, active, onClick }: { skill: any; active: boolean; onC
       className={cn(
         'group w-full rounded-xl border p-4 text-left transition-all',
         active
-          ? 'border-sky-500/40 bg-sky-500/[0.06]'
-          : 'border-white/[0.06] bg-white/[0.015] hover:border-sky-500/25 hover:bg-white/[0.03]',
+          ? 'border-cyan-500/30 bg-cyan-500/[0.06]'
+          : 'border-white/[0.06] bg-white/[0.015] hover:border-cyan-500/25 hover:bg-white/[0.03]',
       )}
     >
       <div className="flex items-start justify-between gap-3">
