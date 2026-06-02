@@ -1,0 +1,51 @@
+- iframe [ref=e2]:
+  - generic [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - generic:
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+          - img "Matrix Code"
+        - generic [ref=f1e5]:
+          - generic [ref=f1e7]:
+            - generic [ref=f1e8]:
+              - img "Status Icon" [ref=f1e9]
+              - paragraph [ref=f1e11]: Ready to start your preview
+            - paragraph [ref=f1e12]:
+              - text: Click "Wake up servers" to start loading your preview.
+              - text: The preview will be ready in approximately 3-5 minutes.
+            - generic [ref=f1e13]:
+              - button "Wake up servers" [ref=f1e14] [cursor=pointer]:
+                - generic [ref=f1e15]: Wake up servers
+              - button "Need Help?" [ref=f1e16] [cursor=pointer]:
+                - generic [ref=f1e18]:
+                  - paragraph [ref=f1e19]: Need Help?
+                  - img
+          - img "Emergent Logo" [ref=f1e21]
+        - generic [ref=f1e22]:
+          - paragraph [ref=f1e23]: • Play Games from Our Creators •
+          - generic [ref=f1e25]:
+            - generic [ref=f1e27]:
+              - img "Flappy Bird" [ref=f1e31] [cursor=pointer]
+              - button "play Play Flappy Bird" [ref=f1e33] [cursor=pointer]:
+                - img "play" [ref=f1e34]
+                - generic [ref=f1e35]: Play Flappy Bird
+            - generic [ref=f1e37]:
+              - button "Previous game" [ref=f1e38] [cursor=pointer]:
+                - img "Previous" [ref=f1e39]
+              - button "Go to game 1" [ref=f1e41] [cursor=pointer]
+              - button "Next game" [ref=f1e43] [cursor=pointer]:
+                - img "Next" [ref=f1e44]
+      - region "Notifications (F8)":
+        - list
+    - region "Notifications (F8)":
+      - list

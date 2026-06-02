@@ -1,127 +1,276 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { skillLabApi } from '~/features/skill-lab/api'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  Activity,
+  Library,
+  Server,
+  FlaskConical,
+  Wand2,
+  ArrowRight,
+  AlertTriangle,
+  Stethoscope,
+  RefreshCw,
+  ShieldCheck,
+  TerminalSquare,
+  RotateCw,
+} from 'lucide-react'
+import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
+import { cn, relTime } from '~/lib/meta'
 import {
   MetricCard,
   SectionCard,
-  StatusBadge,
+  Card,
+  Button,
+  Badge,
   EmptyState,
-} from '~/features/skill-lab/components/primitives'
+  AdapterBadge,
+  useToast,
+} from '~/components/ui'
 
 export const Route = createFileRoute('/')({
-  component: DashboardOverview,
+  component: Dashboard,
 })
 
-function DashboardOverview() {
-  const [registry, setRegistry] = useState<any>(null)
-  const [health, setHealth] = useState<any>(null)
-  const [runtime, setRuntime] = useState<any>(null)
-  const [mcp, setMcp] = useState<any>(null)
-  const [providers, setProviders] = useState<any>(null)
-  const [report, setReport] = useState<any>(null)
-  const [runHistory, setRunHistory] = useState<any>(null)
-  const [logs, setLogs] = useState<any>(null)
+const LIFECYCLE = [
+  { key: 'draft', label: 'Drafts', tone: 'slate' as const },
+  { key: 'quarantined', label: 'Quarantined', tone: 'amber' as const },
+  { key: 'sandbox-tested', label: 'Validated', tone: 'cyan' as const },
+  { key: 'active', label: 'Active', tone: 'emerald' as const },
+  { key: 'deprecated', label: 'Deprecated', tone: 'slate' as const },
+]
 
-  useEffect(() => {
-    skillLabApi.getHealth().then(setHealth).catch(() => {})
-    skillLabApi.getRegistry().then(setRegistry).catch(() => {})
-    skillLabApi.getRuntime().then(setRuntime).catch(() => {})
-    skillLabApi.getMcp().then(setMcp).catch(() => {})
-    skillLabApi.getProviders().then(setProviders).catch(() => {})
-    skillLabApi.getLatestReport().then(setReport).catch(() => {})
-    skillLabApi.getRunHistory().then(setRunHistory).catch(() => {})
-    skillLabApi.getLogs().then(setLogs).catch(() => {})
-  }, [])
+function Dashboard() {
+  const toast = useToast()
+  const navigate = useNavigate()
+  const registry = useApi(api.registry)
+  const health = useApi(api.health)
+  const runtime = useApi(api.runtime)
+  const report = useApi(api.latestReport)
+  const history = useApi(api.history)
+  const adapters = useApi(api.adapters)
 
-  const backendConnected = Boolean(health?.ok)
-  const skills = registry?.skills ?? []
-  const activeSkillsCount = skills.filter((s: any) => s.status === 'active').length
-  const draftOrQuarantinedCount = skills.filter((s: any) =>
-    ['draft', 'quarantined'].includes(s.status),
-  ).length
+  const skills = registry.data?.skills ?? []
+  const counts: Record<string, number> = {}
+  for (const s of skills) counts[s.status] = (counts[s.status] ?? 0) + 1
 
-  const enabledMcpCount = mcp
-    ? Object.values(mcp.servers).filter((server: any) => server.enabled).length
-    : 0
-  const enabledProvidersCount = providers?.providers
-    ? Object.values(providers.providers).filter((provider: any) => provider.enabled === true)
-        .length
-    : 0
+  const activeAdapters = (adapters.data?.adapters ?? []).filter((a: any) => a.enabled)
+  const t4Active = skills.filter((s: any) => s.trustTier === 'T4' && s.status === 'active')
+  const runs = history.data?.entries ?? []
+
+  const quick = [
+    { label: 'Run Diagnostics', icon: Stethoscope, fn: async () => { await api.doctor(); toast('Diagnostics complete') } },
+    { label: 'Sync All', icon: RefreshCw, fn: async () => { await api.sync('all'); toast('Adapters synced'); adapters.refetch() } },
+    { label: 'Run Eval', icon: FlaskConical, fn: async () => { await api.eval(); toast('Eval finished'); navigate({ to: '/evals' }) } },
+    { label: 'Safe Audit', icon: ShieldCheck, fn: async () => { await api.runPrompt('Run a safe system audit.'); toast('Audit complete'); history.refetch() } },
+    { label: 'Open Console', icon: TerminalSquare, fn: async () => navigate({ to: '/console' }) },
+    { label: 'Refresh Registry', icon: RotateCw, fn: async () => { registry.refetch(); toast('Registry refreshed') } },
+  ]
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Total Skills" value={String(skills.length)} detail="registry.yaml" />
-        <MetricCard
-          label="Active Skills"
-          value={String(activeSkillsCount)}
-          tone="success"
-          detail="status = active"
-        />
-        <MetricCard
-          label="Draft/Quarantined"
-          value={String(draftOrQuarantinedCount)}
-          tone="warn"
-          detail="needs review"
-        />
+    <div className="space-y-7 gp-fade-in">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-400/80">
+          Control tower
+        </p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">Dashboard</h1>
+        <p className="mt-1.5 text-sm text-slate-400">
+          Local-first cockpit for your universal AI skill registry.
+        </p>
+      </div>
+
+      {/* Metric row */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Registry Health"
-          value={backendConnected ? 'Healthy' : 'Degraded'}
-          tone={backendConnected ? 'success' : 'danger'}
-          detail={runtime?.activeHost ?? 'unknown host'}
+          value={health.data?.ok ? 'Healthy' : 'Degraded'}
+          tone={health.data?.ok ? 'emerald' : 'rose'}
+          sub={health.data?.ok ? 'all systems nominal' : 'backend unreachable'}
+          icon={Activity}
         />
-        <MetricCard label="Enabled MCPs" value={String(enabledMcpCount)} tone="info" />
         <MetricCard
-          label="Enabled Providers"
-          value={String(enabledProvidersCount)}
-          tone="info"
+          label="Total Skills"
+          value={skills.length}
+          tone="sky"
+          sub={`${counts.active ?? 0} active`}
+          icon={Library}
+        />
+        <MetricCard
+          label="Active Runtime"
+          value={runtime.data?.activeHost ?? '—'}
+          tone="violet"
+          sub={`${activeAdapters.length} adapter(s) enabled`}
+          icon={Server}
         />
         <MetricCard
           label="Last Eval"
-          value={report?.ok ? 'Passed' : 'Pending'}
-          tone={report?.ok ? 'success' : 'warn'}
-          detail={report?.summary ?? 'Run eval'}
-        />
-        <MetricCard
-          label="Last Run"
-          value={runHistory?.entries[0]?.timestamp?.split('T')[1]?.slice(0, 5) ?? 'none'}
-          detail="run-history.ndjson"
+          value={report.data?.ok ? 'Passed' : report.data?.summary ? 'Review' : 'Pending'}
+          tone={report.data?.ok ? 'emerald' : 'amber'}
+          sub={report.data?.timestamp ? relTime(report.data.timestamp) : 'no report yet'}
+          icon={FlaskConical}
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Recent Runs" subtitle="From run-history.ndjson">
-          <div className="space-y-3">
-            {(runHistory?.entries ?? []).length === 0 ? (
-              <EmptyState title="No recorded runs" body="CLI and quick action runs appear here." />
-            ) : (
-              (runHistory?.entries ?? []).slice(0, 6).map((entry: any) => (
-                <div key={`${entry.timestamp}-${entry.command}`} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/40 p-3 hover:bg-slate-800/40 transition-colors">
-                  <div>
-                    <span className="font-mono text-xs text-cyan-400">{entry.command}</span>
-                    <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">{new Date(entry.timestamp).toLocaleString()}</p>
+      {/* Lifecycle pipeline */}
+      <Card className="p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Skill lifecycle</h3>
+          <Link to="/skills" className="text-xs font-medium text-sky-300 hover:text-sky-200">
+            View registry →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {LIFECYCLE.map((stage, i) => (
+            <div key={stage.key} className="relative">
+              <div className="gp-panel-2 px-4 py-3.5">
+                <p className="text-2xl font-bold text-white">{counts[stage.key] ?? 0}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{stage.label}</p>
+              </div>
+              {i < LIFECYCLE.length - 1 ? (
+                <ArrowRight
+                  size={14}
+                  className="absolute -right-2.5 top-1/2 hidden -translate-y-1/2 text-slate-700 lg:block"
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Build CTA */}
+        <div className="lg:col-span-2">
+          <div className="relative overflow-hidden rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/[0.08] via-ink-900 to-violet-500/[0.06] p-6 gp-grid-bg">
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-md">
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
+                  <Wand2 size={12} /> Builder-first
+                </span>
+                <h3 className="mt-3 text-xl font-bold text-white">Build a New Skill</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+                  Create, validate, and activate a portable SKILL.md package for your universal
+                  registry — provider-neutral by design.
+                </p>
+              </div>
+              <Link to="/builder">
+                <Button variant="primary" size="lg" icon={Wand2} testid="dashboard-open-builder">
+                  Open Skill Builder
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <SectionCard title="Quick Actions" subtitle="Simulated runtime operations">
+          <div className="grid grid-cols-2 gap-2">
+            {quick.map((q) => (
+              <button
+                key={q.label}
+                data-testid={`dash-quick-${q.label.toLowerCase().replace(/\s+/g, '-')}`}
+                onClick={() => q.fn()}
+                className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 transition-colors hover:border-sky-500/30 hover:text-white"
+              >
+                <q.icon size={15} className="text-slate-500" />
+                <span className="truncate">{q.label}</span>
+              </button>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent runs */}
+        <SectionCard
+          title="Recent Runs"
+          subtitle="Latest simulated executions"
+          className="lg:col-span-2"
+          actions={
+            <Link to="/history" className="text-xs font-medium text-sky-300 hover:text-sky-200">
+              All history →
+            </Link>
+          }
+        >
+          {runs.length === 0 ? (
+            <EmptyState
+              title="No runs yet"
+              body="Console commands, syncs and evals will appear here."
+              actions={<Link to="/console"><Button size="sm">Open Console</Button></Link>}
+            />
+          ) : (
+            <div className="space-y-2">
+              {runs.slice(0, 6).map((r: any) => (
+                <div key={r.id} className="gp-row flex items-center justify-between gap-3 px-3.5 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-[12.5px] text-sky-200">{r.command}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{relTime(r.timestamp)} · {r.durationMs}ms</p>
                   </div>
-                  <StatusBadge value={entry.ok ? 'ok' : 'failed'} tone={entry.ok ? 'green' : 'red'} />
+                  <Badge tone={r.status === 'ok' ? 'emerald' : r.status === 'blocked' ? 'rose' : 'amber'}>
+                    {r.status}
+                  </Badge>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
 
-        <SectionCard title="System Events" subtitle="From harness/logs/latest.log">
-          <div className="space-y-2 text-xs font-mono">
-            {(logs?.entries ?? []).length === 0 ? (
-              <EmptyState title="No logs yet" body="System activity will populate here." />
-            ) : (
-              (logs?.entries ?? []).slice(0, 8).map((entry: string, index: number) => (
-                <div key={`${entry}-${index}`} className="rounded-lg border border-white/5 bg-[#0a0a0a] px-3 py-2 text-slate-400 opacity-80 hover:opacity-100 transition-opacity">
-                  {entry}
-                </div>
-              ))
-            )}
+        {/* System alerts */}
+        <SectionCard title="System Alerts" subtitle="Things that may need attention">
+          <div className="space-y-2.5">
+            {!health.data?.ok ? (
+              <Alert tone="rose" icon={AlertTriangle} text="Local backend unavailable — running in demo mode." />
+            ) : null}
+            {t4Active.length > 0 ? (
+              <Alert
+                tone="amber"
+                icon={ShieldCheck}
+                text={`${t4Active.length} T4 skill(s) active — human approval policy enforced.`}
+              />
+            ) : null}
+            {activeAdapters.length <= 1 ? (
+              <Alert tone="amber" icon={Server} text="Only one adapter enabled — sync more hosts for portability." />
+            ) : null}
+            {health.data?.ok && t4Active.length === 0 ? (
+              <Alert tone="emerald" icon={ShieldCheck} text="No outstanding governance alerts." />
+            ) : null}
           </div>
         </SectionCard>
       </div>
+
+      {/* Adapter status */}
+      <SectionCard
+        title="Adapter Status"
+        subtitle="Universal skills compiled into host adapters"
+        actions={<Link to="/sync" className="text-xs font-medium text-sky-300 hover:text-sky-200">Manage →</Link>}
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(adapters.data?.adapters ?? []).map((a: any) => (
+            <div key={a.id} className="gp-panel-2 p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[12.5px] text-slate-200">{a.name}</span>
+                <span className={cn('h-2 w-2 rounded-full', a.enabled ? 'bg-emerald-400' : 'bg-slate-600')} />
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <AdapterBadge enabled={a.enabled} />
+                <span className="text-[11px] text-slate-500">{a.generatedFiles} files</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+}
+
+function Alert({ tone, icon: Icon, text }: { tone: 'rose' | 'amber' | 'emerald'; icon: any; text: string }) {
+  const map = {
+    rose: 'border-rose-500/25 bg-rose-500/[0.07] text-rose-200',
+    amber: 'border-amber-500/25 bg-amber-500/[0.07] text-amber-200',
+    emerald: 'border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-200',
+  }
+  return (
+    <div className={cn('flex items-start gap-2.5 rounded-xl border p-3 text-[13px] leading-relaxed', map[tone])}>
+      <Icon size={15} className="mt-0.5 shrink-0" />
+      <span>{text}</span>
     </div>
   )
 }

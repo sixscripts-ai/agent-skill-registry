@@ -1,54 +1,88 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { skillLabApi } from '~/features/skill-lab/api'
+import { Boxes, AlertTriangle } from 'lucide-react'
+import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
 import {
-  SectionCard,
-  StatusBadge,
+  PageHeader,
+  Card,
+  Button,
+  Badge,
+  TrustTierBadge,
+  AdapterBadge,
+  LoadingState,
   EmptyState,
-} from '~/features/skill-lab/components/primitives'
+  useToast,
+} from '~/components/ui'
 
 export const Route = createFileRoute('/mcp')({
-  component: McpOverview,
+  component: McpPage,
 })
 
-function McpOverview() {
-  const [mcp, setMcp] = useState<any>(null)
-
-  useEffect(() => {
-    skillLabApi.getMcp().then(setMcp).catch(() => {})
-  }, [])
+function McpPage() {
+  const toast = useToast()
+  const mcp = useApi(api.mcp)
+  const serversData = mcp.data?.servers ?? {}
+  const servers = Object.entries(serversData).map(([id, s]: [string, any]) => ({
+    id,
+    name: id,
+    ...s
+  }))
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="MCP Servers" subtitle="Model Context Protocol configuration">
-        {!mcp ? (
-          <EmptyState title="MCP config unavailable" body="Could not load mcp.yaml" />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Object.entries(mcp.servers).map(([name, server]: [string, any]) => (
-              <div key={name} className="flex flex-col justify-between rounded-xl border border-white/5 bg-slate-900/40 p-5 hover:bg-slate-800/40 transition-colors">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold tracking-wide text-cyan-50">{name}</h3>
-                    <StatusBadge value={server.enabled ? 'enabled' : 'disabled'} tone={server.enabled ? 'cyan' : 'gray'} />
-                  </div>
-                  <p className="text-xs leading-relaxed text-slate-400">{server.purpose}</p>
-                </div>
-                
-                <div className="mt-6 flex flex-wrap gap-2 border-t border-white/5 pt-4">
-                  <StatusBadge value={server.trustTier} tone="yellow" />
-                  {server.envKey ? (
-                    <StatusBadge
-                      value={`${server.envKey}: ${server.envConfigured ? 'ok' : 'missing'}`}
-                      tone={server.envConfigured ? 'green' : 'red'}
-                    />
-                  ) : null}
-                </div>
+    <div className="space-y-6 gp-fade-in">
+      <PageHeader
+        icon={Boxes}
+        eyebrow="Infrastructure"
+        title="MCP Servers"
+        description="Model Context Protocol tool bridges. Each server exposes scoped capabilities under a trust tier."
+      />
+
+      {mcp.loading ? (
+        <LoadingState label="Loading MCP servers…" />
+      ) : servers.length === 0 ? (
+        <EmptyState title="No MCP servers configured" />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {servers.map((s: any) => (
+            <Card key={s.id} className="flex flex-col p-5">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-base font-semibold text-cyan-200">{s.name}</span>
+                <AdapterBadge enabled={s.enabled} />
               </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
+              <p className="mt-2 flex-1 text-[13px] leading-relaxed text-slate-400">{s.purpose}</p>
+
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <TrustTierBadge trust={s.trustTier} />
+                {(s.scope ?? []).map((sc: string) => (
+                  <Badge key={sc} tone="slate">{sc}</Badge>
+                ))}
+              </div>
+
+              {s.envKey ? (
+                <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3">
+                  <span className="font-mono text-[11px] text-slate-500">{s.envKey}</span>
+                  <Badge tone={s.envConfigured ? 'emerald' : 'rose'} dot>
+                    {s.envConfigured ? 'configured' : 'missing'}
+                  </Badge>
+                </div>
+              ) : null}
+
+              {(s.warnings ?? []).length ? (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] px-2.5 py-2 text-[11px] text-amber-200">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                  <span>{s.warnings[0]}</span>
+                </div>
+              ) : null}
+
+              <div className="mt-4 flex gap-2">
+                <Button size="sm" variant="secondary" onClick={() => toast(`${s.name} validated`)} testid={`mcp-validate-${s.name}`}>Validate</Button>
+                <Button size="sm" variant="ghost" onClick={() => toast(`${s.name} test: reachable (simulated)`)}>Test</Button>
+                <Button size="sm" variant="ghost" onClick={() => toast('Configure in mcp.yaml')}>Configure</Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

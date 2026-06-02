@@ -1,3 +1,5 @@
+import YAML from 'yaml'
+
 type SkillTier =
   | 'planning'
   | 'functional'
@@ -169,48 +171,6 @@ async function readText(relativePath: string): Promise<string | null> {
   }
 }
 
-function parseYamlScalar(rawValue: string): string | boolean | number | null {
-  const value = rawValue.trim()
-  if (value === 'true') return true
-  if (value === 'false') return false
-  if (value === 'null') return null
-  if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value)
-  if (value.startsWith('"') && value.endsWith('"')) return value.slice(1, -1)
-  return value
-}
-
-function parseInlineObject(raw: string): Record<string, string | boolean | number | null> {
-  const entries = raw
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  const parsed: Record<string, string | boolean | number | null> = {}
-  for (const entry of entries) {
-    const splitIndex = entry.indexOf(':')
-    if (splitIndex === -1) continue
-    const key = entry.slice(0, splitIndex).trim()
-    const value = entry.slice(splitIndex + 1).trim()
-    parsed[key] = parseYamlScalar(value)
-  }
-  return parsed
-}
-
-function extractSection(text: string, startKey: string, endKey?: string): string {
-  const startToken = `${startKey}:\n`
-  const startIndex = text.indexOf(startToken)
-  if (startIndex === -1) return ''
-
-  const sectionStart = startIndex + startToken.length
-  if (!endKey) {
-    return text.slice(sectionStart)
-  }
-
-  const endToken = `\n${endKey}:`
-  const endIndex = text.indexOf(endToken, sectionStart)
-  return endIndex === -1 ? text.slice(sectionStart) : text.slice(sectionStart, endIndex)
-}
-
 export async function getHealthPayload() {
   const root = await resolveSkillsHome()
   return {
@@ -223,71 +183,63 @@ export async function getHealthPayload() {
 
 export async function getRegistryPayload(): Promise<RegistryPayload> {
   const text = (await readText('registry.yaml')) ?? ''
-
-  const registryVersion =
-    (text.match(/^registry_version:\s*"?([^"\n]+)"?/m)?.[1] ?? 'unknown').trim()
-  const mode = (text.match(/^mode:\s*"?([^"\n]+)"?/m)?.[1] ?? 'unknown').trim()
-  const architecture =
-    (text.match(/^architecture:\s*"?([^"\n]+)"?/m)?.[1] ?? 'unknown').trim()
-  const lastSyncedRaw = text.match(/^last_synced:\s*([^\n]+)/m)?.[1]?.trim() ?? 'null'
-
-  const skillPattern =
-    /^\s*- name:\s*([^\n]+)\n\s+tier:\s*([^\n]+)\n\s+path:\s*([^\n]+)\n\s+description:\s*"([^"]*)"\n\s+trust_tier:\s*([^\n]+)\n\s+status:\s*([^\n]+)/gm
-
-  const skills: Array<RegistrySkill> = []
-  for (const match of text.matchAll(skillPattern)) {
-    skills.push({
-      name: match[1].trim(),
-      tier: match[2].trim() as SkillTier,
-      path: match[3].trim(),
-      description: match[4].trim(),
-      trustTier: match[5].trim() as TrustTier,
-      status: match[6].trim() as SkillStatus,
-    })
+  let doc: any = {}
+  try {
+    doc = YAML.parse(text) || {}
+  } catch (e) {
+    // Parse error fallback
   }
 
+  const skills: Array<RegistrySkill> = (doc.skills || []).map((s: any) => ({
+    name: String(s.name ?? ''),
+    tier: String(s.tier ?? '') as SkillTier,
+    path: String(s.path ?? ''),
+    description: String(s.description ?? ''),
+    trustTier: String(s.trust_tier ?? '') as TrustTier,
+    status: String(s.status ?? '') as SkillStatus,
+  }))
+
   return {
-    registryVersion,
-    mode,
-    architecture,
-    lastSynced: lastSyncedRaw === 'null' ? null : lastSyncedRaw,
+    registryVersion: String(doc.registry_version ?? 'unknown'),
+    mode: String(doc.mode ?? 'unknown'),
+    architecture: String(doc.architecture ?? 'unknown'),
+    lastSynced: doc.last_synced ? String(doc.last_synced) : null,
     skills,
   }
 }
 
 export async function getRuntimePayload(): Promise<RuntimePayload> {
   const text = (await readText('runtime.yaml')) ?? ''
-
-  const mode = (text.match(/^mode:\s*([^\n]+)/m)?.[1] ?? 'unknown').trim()
-  const activeHost = (text.match(/^active_host:\s*([^\n]+)/m)?.[1] ?? 'unknown').trim()
-
-  const hostsSection = extractSection(text, 'hosts', 'execution_policy')
-  const executionPolicySection = extractSection(text, 'execution_policy', 'memory')
-  const memorySection = extractSection(text, 'memory')
+  let doc: any = {}
+  try { doc = YAML.parse(text) || {} } catch (e) {}
 
   const hosts: Record<string, RuntimeHost> = {}
-  for (const match of hostsSection.matchAll(/^\s{2}([a-z0-9-]+):\s*\{([^}]+)\}/gm)) {
-    const hostName = match[1].trim()
-    const values = parseInlineObject(match[2])
-    hosts[hostName] = {
-      enabled: Boolean(values.enabled),
-      adapterPath: String(values.adapter_path ?? ''),
+  if (doc.hosts) {
+    for (const [k, v] of Object.entries<any>(doc.hosts)) {
+      hosts[k] = {
+        enabled: Boolean(v?.enabled),
+        adapterPath: String(v?.adapter_path ?? ''),
+      }
     }
   }
 
   const executionPolicy: Record<string, boolean> = {}
-  for (const match of executionPolicySection.matchAll(/^\s{2}([a-z0-9_]+):\s*([^\n]+)/gm)) {
-    executionPolicy[match[1].trim()] = Boolean(parseYamlScalar(match[2]))
+  if (doc.execution_policy) {
+    for (const [k, v] of Object.entries<any>(doc.execution_policy)) {
+      executionPolicy[k] = Boolean(v)
+    }
   }
 
   const memory: Record<string, string> = {}
-  for (const match of memorySection.matchAll(/^\s{2}([a-z0-9_]+):\s*([^\n]+)/gm)) {
-    memory[match[1].trim()] = String(parseYamlScalar(match[2]))
+  if (doc.memory) {
+    for (const [k, v] of Object.entries<any>(doc.memory)) {
+      memory[k] = String(v)
+    }
   }
 
   return {
-    mode,
-    activeHost,
+    mode: String(doc.mode ?? 'unknown'),
+    activeHost: String(doc.active_host ?? 'unknown'),
     hosts,
     executionPolicy,
     memory,
@@ -296,40 +248,35 @@ export async function getRuntimePayload(): Promise<RuntimePayload> {
 
 export async function getProvidersPayload(): Promise<ProvidersPayload> {
   const text = (await readText('providers.yaml')) ?? ''
-
-  const defaultProvider =
-    (text.match(/^default_provider:\s*([^\n]+)/m)?.[1] ?? 'unknown').trim()
-  const defaultModel = (text.match(/^default_model:\s*([^\n]+)/m)?.[1] ?? 'unknown').trim()
-
-  const rolesSection = extractSection(text, 'roles', 'providers')
-  const providersSection = extractSection(text, 'providers')
+  let doc: any = {}
+  try { doc = YAML.parse(text) || {} } catch (e) {}
 
   const roles: Record<string, { provider: string; model: string }> = {}
-  for (const match of rolesSection.matchAll(/^\s{2}([a-z0-9-]+):\s*\{([^}]+)\}/gm)) {
-    const role = match[1].trim()
-    const values = parseInlineObject(match[2])
-    roles[role] = {
-      provider: String(values.provider ?? 'local'),
-      model: String(values.model ?? 'none'),
+  if (doc.roles) {
+    for (const [k, v] of Object.entries<any>(doc.roles)) {
+      roles[k] = {
+        provider: String(v?.provider ?? 'local'),
+        model: String(v?.model ?? 'none'),
+      }
     }
   }
 
   const providers: Record<string, Record<string, string | boolean | number | null>> = {}
   const envStatus: Record<string, boolean> = {}
-  for (const match of providersSection.matchAll(/^\s{2}([a-z0-9-]+):\s*\{([^}]+)\}/gm)) {
-    const providerName = match[1].trim()
-    const parsed = parseInlineObject(match[2])
-    providers[providerName] = parsed
-
-    const envKey = parsed.env_key
-    if (typeof envKey === 'string' && envKey.length > 0) {
-      envStatus[providerName] = Boolean(process.env[envKey])
+  
+  if (doc.providers) {
+    for (const [k, v] of Object.entries<any>(doc.providers)) {
+      providers[k] = v || {}
+      const envKey = v?.env_key
+      if (typeof envKey === 'string' && envKey.length > 0) {
+        envStatus[k] = Boolean(process.env[envKey])
+      }
     }
   }
 
   return {
-    defaultProvider,
-    defaultModel,
+    defaultProvider: String(doc.default_provider ?? 'unknown'),
+    defaultModel: String(doc.default_model ?? 'unknown'),
     roles,
     providers,
     envStatus,
@@ -338,55 +285,21 @@ export async function getProvidersPayload(): Promise<ProvidersPayload> {
 
 export async function getMcpPayload(): Promise<McpPayload> {
   const text = (await readText('mcp.yaml')) ?? ''
-  const mcpSection = extractSection(text, 'mcp_servers')
+  let doc: any = {}
+  try { doc = YAML.parse(text) || {} } catch (e) {}
 
   const servers: Record<string, McpServer> = {}
-  const blockPattern = /^\s{2}([a-z0-9-]+):\n((?:\s{4}[^\n]+\n?)*)/gm
-  for (const block of mcpSection.matchAll(blockPattern)) {
-    const serverName = block[1].trim()
-    const lines = block[2]
-    const server: McpServer = {
-      enabled: false,
-      purpose: '',
-      trustTier: 'unknown',
-    }
-
-    for (const entry of lines.matchAll(/^\s{4}([a-z0-9_]+):\s*(.+)$/gm)) {
-      const key = entry[1].trim()
-      const rawValue = entry[2].trim()
-
-      if (key === 'enabled') {
-        server.enabled = Boolean(parseYamlScalar(rawValue))
-        continue
-      }
-
-      if (key === 'purpose') {
-        server.purpose = String(parseYamlScalar(rawValue) ?? '')
-        continue
-      }
-
-      if (key === 'trust_tier') {
-        server.trustTier = String(parseYamlScalar(rawValue) ?? 'unknown')
-        continue
-      }
-
-      if (key === 'env_key') {
-        server.envKey = String(parseYamlScalar(rawValue) ?? '')
-        server.envConfigured = server.envKey.length > 0 ? Boolean(process.env[server.envKey]) : undefined
-        continue
-      }
-
-      if (key === 'scope') {
-        const cleaned = rawValue.replace(/^\[/, '').replace(/\]$/, '')
-        server.scope = cleaned
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .map((item) => String(parseYamlScalar(item)))
+  if (doc.mcp_servers) {
+    for (const [serverName, serverData] of Object.entries<any>(doc.mcp_servers)) {
+      servers[serverName] = {
+        enabled: Boolean(serverData?.enabled),
+        purpose: String(serverData?.purpose ?? ''),
+        trustTier: String(serverData?.trust_tier ?? 'unknown'),
+        envKey: serverData?.env_key ? String(serverData.env_key) : undefined,
+        envConfigured: serverData?.env_key ? Boolean(process.env[String(serverData.env_key)]) : undefined,
+        scope: Array.isArray(serverData?.scope) ? serverData.scope.map(String) : undefined,
       }
     }
-
-    servers[serverName] = server
   }
 
   return { servers }

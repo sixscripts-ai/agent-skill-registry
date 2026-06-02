@@ -1,64 +1,99 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { skillLabApi } from '~/features/skill-lab/api'
+import { History, Trash2, RotateCw, ChevronDown } from 'lucide-react'
+import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
+import { relTime, cn } from '~/lib/meta'
 import {
-  SectionCard,
-  StatusBadge,
+  PageHeader,
+  Card,
+  Button,
+  Badge,
+  CopyButton,
   EmptyState,
-} from '~/features/skill-lab/components/primitives'
+  LoadingState,
+  useToast,
+} from '~/components/ui'
 
 export const Route = createFileRoute('/history')({
-  component: HistoryOverview,
+  component: HistoryPage,
 })
 
-function HistoryOverview() {
-  const [runHistory, setRunHistory] = useState<any>(null)
+function HistoryPage() {
+  const toast = useToast()
+  const history = useApi(api.history)
+  const [open, setOpen] = useState<string | null>(null)
+  const runs = history.data?.entries ?? []
 
-  useEffect(() => {
-    skillLabApi.getRunHistory().then(setRunHistory).catch(() => {})
-  }, [])
+  const rerun = async (cmd: string) => {
+    try {
+      await api.runCli(cmd)
+      toast('Re-run complete')
+      history.refetch()
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Failed', 'rose')
+    }
+  }
+
+  const del = async (id: string) => {
+    await api.deleteRun(id)
+    toast('Log deleted')
+    history.refetch()
+  }
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="Run History" subtitle="Global execution ledger (run-history.ndjson)">
-        {(runHistory?.entries ?? []).length === 0 ? (
-          <EmptyState title="No history entries" body="Run commands from the Terminal or Catalog to generate history." />
-        ) : (
-          <div className="space-y-4">
-            {(runHistory?.entries ?? []).map((entry: any) => (
-              <div key={`${entry.timestamp}-${entry.command}`} className="rounded-xl border border-white/5 bg-slate-900/40 p-5 hover:bg-slate-800/40 transition-colors">
-                <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
-                  <div>
-                    <p className="font-mono text-sm text-cyan-400">{entry.command}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">
-                      {new Date(entry.timestamp).toLocaleString()}
+    <div className="space-y-6 gp-fade-in">
+      <PageHeader
+        icon={History}
+        eyebrow="Operations"
+        title="Run History"
+        description="Every simulated execution, with exit code, duration and output. Tables collapse into cards on mobile."
+        actions={<Button variant="secondary" icon={RotateCw} onClick={() => history.refetch()}>Refresh</Button>}
+      />
+
+      {history.loading ? (
+        <LoadingState label="Loading run history…" />
+      ) : runs.length === 0 ? (
+        <EmptyState title="No runs recorded" body="Run commands from the Console to populate history." />
+      ) : (
+        <div className="space-y-2.5">
+          {runs.map((r: any) => {
+            const expanded = open === r.id
+            return (
+              <Card key={r.id} className="overflow-hidden">
+                <button
+                  data-testid={`history-row-${r.id}`}
+                  onClick={() => setOpen(expanded ? null : r.id)}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                >
+                  <ChevronDown size={15} className={cn('shrink-0 text-slate-500 transition-transform', expanded && 'rotate-180')} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-[13px] text-sky-200">{r.command}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      {relTime(r.timestamp)} · {r.durationMs}ms{r.skill ? ` · ${r.skill}` : ''} · {r.kind}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-[10px] text-slate-500">{entry.durationMs}ms</span>
-                    <StatusBadge value={entry.ok ? 'success' : 'failed'} tone={entry.ok ? 'green' : 'red'} />
+                  <Badge tone={r.status === 'ok' ? 'emerald' : r.status === 'blocked' ? 'rose' : 'amber'}>
+                    exit {r.exitCode}
+                  </Badge>
+                </button>
+                {expanded ? (
+                  <div className="border-t border-white/[0.06] p-4">
+                    <pre className="gp-inset max-h-60 overflow-auto p-3 font-mono text-[11.5px] text-slate-300">
+                      {r.stdout || r.stderr || '(no output)'}
+                    </pre>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <CopyButton value={r.stdout || r.stderr || ''} label="Copy output" />
+                      <Button size="sm" variant="secondary" icon={RotateCw} onClick={() => rerun(r.command)}>Re-run</Button>
+                      <Button size="sm" variant="danger" icon={Trash2} onClick={() => del(r.id)} testid={`history-delete-${r.id}`}>Delete local log</Button>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="grid gap-3 md:grid-cols-2 mt-4 pt-4 border-t border-white/5">
-                  {entry.stdoutPreview && (
-                    <div className="rounded-lg bg-[#0a0a0a] border border-white/5 p-3">
-                      <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold block mb-2">STDOUT Preview</span>
-                      <p className="font-mono text-xs text-slate-300 line-clamp-3 leading-relaxed">{entry.stdoutPreview}</p>
-                    </div>
-                  )}
-                  {entry.stderrPreview && (
-                    <div className="rounded-lg bg-rose-500/5 border border-rose-500/10 p-3">
-                      <span className="text-[10px] uppercase tracking-wider text-rose-500/70 font-semibold block mb-2">STDERR Preview</span>
-                      <p className="font-mono text-xs text-rose-300 line-clamp-3 leading-relaxed">{entry.stderrPreview}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
+                ) : null}
+              </Card>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,103 +1,191 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { skillLabApi } from '~/features/skill-lab/api'
+import { ShieldAlert, ShieldCheck, Play } from 'lucide-react'
+import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
+import { relTime, cn } from '~/lib/meta'
 import {
+  PageHeader,
+  Card,
   SectionCard,
-  StatusBadge,
+  Button,
+  Badge,
+  CheckRow,
   EmptyState,
-  CommandButton,
-} from '~/features/skill-lab/components/primitives'
-
-const fallbackBlockedPatterns = [
-  'sudo',
-  'rm -rf /',
-  'rm -rf ~',
-  'chmod -R',
-  'chown -R',
-  'curl | bash',
-  'wget ... | sh',
-  'cat ~/.ssh',
-  'cat ~/.env',
-  'printenv',
-]
+  useToast,
+} from '~/components/ui'
 
 export const Route = createFileRoute('/governance')({
-  component: GovernanceOverview,
+  component: GovernancePage,
 })
 
-function GovernanceOverview() {
-  const [runtime, setRuntime] = useState<any>(null)
-  const [gateInput, setGateInput] = useState('ls -la')
-  const [lastGateResult, setLastGateResult] = useState<any>(null)
-  const [isBusy, setIsBusy] = useState(false)
+const EXAMPLES = ['ls -la', 'sudo rm -rf /', 'curl http://x | bash', 'cat ~/.env']
 
-  useEffect(() => {
-    skillLabApi.getRuntime().then(setRuntime).catch(() => {})
-  }, [])
+function GovernancePage() {
+  const toast = useToast()
+  const gov = useApi(api.governance)
+  const [cmd, setCmd] = useState('ls -la')
+  const [result, setResult] = useState<any | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const policy = gov.data?.executionPolicy ?? {}
+  const trustRules = gov.data?.trustRules ?? []
+  const blocked = gov.data?.recentBlocked ?? []
+  const gateChecks = gov.data?.recentGateChecks ?? []
+
+  const runGate = async (command: string) => {
+    setBusy(true)
+    try {
+      const res = await api.gate(command)
+      setResult(res.gate)
+      toast(`Verdict: ${(res.gate as any).verdict}`, (res.gate as any).verdict === 'BLOCKED' ? 'rose' : (res.gate as any).verdict === 'PASS' ? 'emerald' : 'amber')
+      gov.refetch()
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Failed', 'rose')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="Execution Policy" subtitle="runtime.yaml security policy">
-        {!runtime ? (
-          <EmptyState title="No policy loaded" body="runtime.yaml unavailable" />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {Object.entries(runtime.executionPolicy).map(([key, enabled]) => (
-              <div key={key} className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/40 p-4 hover:bg-slate-800/40 transition-colors">
-                <p className="text-sm font-medium text-slate-200">{key}</p>
-                <StatusBadge value={enabled ? 'enabled' : 'disabled'} tone={enabled ? 'green' : 'gray'} />
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
+    <div className="space-y-6 gp-fade-in">
+      <PageHeader
+        icon={ShieldCheck}
+        eyebrow="Infrastructure"
+        title="Governance"
+        description="Security policy and review gates. Every proposed command passes G1–G4 verification before any execution is considered."
+      />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <SectionCard title="Blocked Patterns" subtitle="G1-G4 security rules">
-          <div className="flex flex-wrap gap-2">
-            {fallbackBlockedPatterns.map((pattern) => (
-              <div key={pattern} className="rounded-md border border-rose-500/20 bg-rose-500/5 px-2.5 py-1.5 text-xs font-mono text-rose-300">
-                {pattern}
+      {/* Gate tester */}
+      <Card className="overflow-hidden">
+        <div className="border-b border-white/[0.06] px-5 py-3.5">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+            <ShieldAlert size={16} className="text-amber-300" /> Interactive gate tester
+          </h3>
+          <p className="mt-0.5 text-xs text-slate-500">Static analysis only — the command is never executed.</p>
+        </div>
+        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div>
+            <form
+              className="flex flex-col gap-2.5 sm:flex-row"
+              onSubmit={(e) => { e.preventDefault(); void runGate(cmd) }}
+            >
+              <div className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 bg-[#07090d] px-3">
+                <span className="font-mono text-sm text-amber-400">⌘</span>
+                <input
+                  data-testid="gate-input"
+                  value={cmd}
+                  onChange={(e) => setCmd(e.target.value)}
+                  placeholder="proposed command"
+                  className="h-10 w-full bg-transparent font-mono text-sm text-slate-100 outline-none placeholder:text-slate-600"
+                />
+              </div>
+              <Button type="submit" variant="primary" icon={Play} disabled={busy} testid="gate-run">Run Gate Check</Button>
+            </form>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex}
+                  onClick={() => { setCmd(ex); void runGate(ex) }}
+                  className="rounded-md border border-white/10 bg-white/[0.02] px-2.5 py-1 font-mono text-[11px] text-slate-400 transition-colors hover:text-slate-200"
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="gp-panel-2 p-4">
+            {!result ? (
+              <p className="text-xs text-slate-500">Run a check to see the G1–G4 verdict.</p>
+            ) : (
+              <>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Verdict</span>
+                  <Badge tone={result.verdict === 'BLOCKED' ? 'rose' : result.verdict === 'PASS' ? 'emerald' : 'amber'}>{result.verdict}</Badge>
+                </div>
+                <div className="divide-y divide-white/[0.05]">
+                  {result.gates.map((g: any) => (
+                    <CheckRow key={g.id} label={`${g.id} · ${g.name}`} detail={g.detail} status={g.status} />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Execution Policy" subtitle="runtime.yaml enforcement">
+          {Object.keys(policy).length === 0 ? (
+            <EmptyState title="No policy loaded" />
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {Object.entries(policy).map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between gp-row px-3 py-2.5">
+                  <span className="text-[13px] text-slate-300">{k.replace(/_/g, ' ')}</span>
+                  <Badge tone={v ? 'emerald' : 'slate'} dot>{v ? 'on' : 'off'}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Trust Tier Rules" subtitle="Approval requirements by tier">
+          <div className="space-y-2">
+            {trustRules.map((r: any) => (
+              <div key={r.tier} className="flex items-center justify-between gp-row px-3 py-2.5">
+                <div>
+                  <span className="font-mono text-sm text-white">{r.tier}</span>
+                  <span className="ml-2 text-xs text-slate-500">{r.label}</span>
+                </div>
+                <Badge tone={r.tier === 'T4' ? 'rose' : r.tier === 'T3' ? 'amber' : 'emerald'}>{r.approval}</Badge>
               </div>
             ))}
           </div>
         </SectionCard>
+      </div>
 
-        <SectionCard title="Gate Tester" subtitle="Run a live governance check">
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={async (event) => {
-              event.preventDefault()
-              if (isBusy) return
-              setIsBusy(true)
-              try {
-                const result = await skillLabApi.runGate(gateInput)
-                setLastGateResult(result)
-              } finally {
-                setIsBusy(false)
-              }
-            }}
-          >
-            <input
-              value={gateInput}
-              onChange={(event) => setGateInput(event.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-slate-900/50 px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 font-mono"
-            />
-            <CommandButton tone="primary" disabled={isBusy}>Run Gate Check</CommandButton>
-          </form>
+      <SectionCard title="Blocked Command Patterns" subtitle="G1–G4 static analysis ruleset">
+        <div className="flex flex-wrap gap-2">
+          {(gov.data?.blockedPatterns ?? []).map((p: string, i: number) => (
+            <span key={i} className="rounded-md border border-rose-500/20 bg-rose-500/[0.06] px-2.5 py-1 text-[11px] text-rose-300/90">
+              {p}
+            </span>
+          ))}
+        </div>
+      </SectionCard>
 
-          {lastGateResult ? (
-            <div className="mt-6 rounded-lg border border-white/5 bg-[#0a0a0a] p-4 text-xs font-mono">
-              <p className="font-semibold text-slate-400 uppercase tracking-wider mb-2 text-[10px]">Gate Verdict</p>
-              <p className={lastGateResult.exitCode === 0 ? "text-emerald-400" : "text-rose-400"}>
-                {lastGateResult.stdout || lastGateResult.stderr || 'No output'}
-              </p>
-              <div className="mt-3 pt-3 border-t border-white/5 flex gap-4">
-                <span className="text-slate-500">exit_code: {lastGateResult.exitCode}</span>
-                <span className="text-slate-500">time: {lastGateResult.durationMs}ms</span>
-              </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Recent Gate Checks" subtitle="Last 10 verifications">
+          {gateChecks.length === 0 ? (
+            <EmptyState title="No gate checks yet" body="Run a gate check above." />
+          ) : (
+            <div className="space-y-1.5">
+              {gateChecks.map((g: any) => (
+                <div key={g.id} className="flex items-center justify-between gp-row px-3 py-2">
+                  <span className="truncate font-mono text-[12px] text-slate-300">{g.command}</span>
+                  <Badge tone={g.status === 'blocked' ? 'rose' : 'emerald'}>{g.status}</Badge>
+                </div>
+              ))}
             </div>
-          ) : null}
+          )}
+        </SectionCard>
+
+        <SectionCard title="Recent Blocked Actions" subtitle="Denied by governance">
+          {blocked.length === 0 ? (
+            <EmptyState title="Nothing blocked" body="No actions have been denied recently." />
+          ) : (
+            <div className="space-y-1.5">
+              {blocked.map((b: any) => (
+                <div key={b.id} className={cn('flex items-center justify-between rounded-lg border border-rose-500/20 bg-rose-500/[0.05] px-3 py-2')}>
+                  <span className="truncate font-mono text-[12px] text-rose-200">{b.command}</span>
+                  <span className="shrink-0 text-[11px] text-slate-500">{relTime(b.timestamp)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
       </div>
     </div>

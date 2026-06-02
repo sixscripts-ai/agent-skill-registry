@@ -9,25 +9,45 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ProvidersRouteImport } from './routes/providers'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LogsRouteImport } from './routes/logs'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GovernanceRouteImport } from './routes/governance'
 import { Route as EvalsRouteImport } from './routes/evals'
+import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as CliRouteImport } from './routes/cli'
+import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as SkillsSkillIdRouteImport } from './routes/skills/$skillId'
 
+const SyncRoute = SyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProvidersRoute = ProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IntegrationsRoute = IntegrationsRouteImport.update({
@@ -50,9 +70,19 @@ const EvalsRoute = EvalsRouteImport.update({
   path: '/evals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleRoute = ConsoleRouteImport.update({
+  id: '/console',
+  path: '/console',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CliRoute = CliRouteImport.update({
   id: '/cli',
   path: '/cli',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuilderRoute = BuilderRouteImport.update({
+  id: '/builder',
+  path: '/builder',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -73,38 +103,53 @@ const SkillsSkillIdRoute = SkillsSkillIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/builder': typeof BuilderRoute
   '/cli': typeof CliRoute
+  '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
   '/governance': typeof GovernanceRoute
   '/history': typeof HistoryRoute
   '/integrations': typeof IntegrationsRoute
+  '/logs': typeof LogsRoute
   '/mcp': typeof McpRoute
+  '/providers': typeof ProvidersRoute
   '/settings': typeof SettingsRoute
+  '/sync': typeof SyncRoute
   '/skills/$skillId': typeof SkillsSkillIdRoute
   '/skills/': typeof SkillsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/builder': typeof BuilderRoute
   '/cli': typeof CliRoute
+  '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
   '/governance': typeof GovernanceRoute
   '/history': typeof HistoryRoute
   '/integrations': typeof IntegrationsRoute
+  '/logs': typeof LogsRoute
   '/mcp': typeof McpRoute
+  '/providers': typeof ProvidersRoute
   '/settings': typeof SettingsRoute
+  '/sync': typeof SyncRoute
   '/skills/$skillId': typeof SkillsSkillIdRoute
   '/skills': typeof SkillsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/builder': typeof BuilderRoute
   '/cli': typeof CliRoute
+  '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
   '/governance': typeof GovernanceRoute
   '/history': typeof HistoryRoute
   '/integrations': typeof IntegrationsRoute
+  '/logs': typeof LogsRoute
   '/mcp': typeof McpRoute
+  '/providers': typeof ProvidersRoute
   '/settings': typeof SettingsRoute
+  '/sync': typeof SyncRoute
   '/skills/$skillId': typeof SkillsSkillIdRoute
   '/skills/': typeof SkillsIndexRoute
 }
@@ -112,56 +157,83 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/builder'
     | '/cli'
+    | '/console'
     | '/evals'
     | '/governance'
     | '/history'
     | '/integrations'
+    | '/logs'
     | '/mcp'
+    | '/providers'
     | '/settings'
+    | '/sync'
     | '/skills/$skillId'
     | '/skills/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/builder'
     | '/cli'
+    | '/console'
     | '/evals'
     | '/governance'
     | '/history'
     | '/integrations'
+    | '/logs'
     | '/mcp'
+    | '/providers'
     | '/settings'
+    | '/sync'
     | '/skills/$skillId'
     | '/skills'
   id:
     | '__root__'
     | '/'
+    | '/builder'
     | '/cli'
+    | '/console'
     | '/evals'
     | '/governance'
     | '/history'
     | '/integrations'
+    | '/logs'
     | '/mcp'
+    | '/providers'
     | '/settings'
+    | '/sync'
     | '/skills/$skillId'
     | '/skills/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BuilderRoute: typeof BuilderRoute
   CliRoute: typeof CliRoute
+  ConsoleRoute: typeof ConsoleRoute
   EvalsRoute: typeof EvalsRoute
   GovernanceRoute: typeof GovernanceRoute
   HistoryRoute: typeof HistoryRoute
   IntegrationsRoute: typeof IntegrationsRoute
+  LogsRoute: typeof LogsRoute
   McpRoute: typeof McpRoute
+  ProvidersRoute: typeof ProvidersRoute
   SettingsRoute: typeof SettingsRoute
+  SyncRoute: typeof SyncRoute
   SkillsSkillIdRoute: typeof SkillsSkillIdRoute
   SkillsIndexRoute: typeof SkillsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sync': {
+      id: '/sync'
+      path: '/sync'
+      fullPath: '/sync'
+      preLoaderRoute: typeof SyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -169,11 +241,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/providers': {
+      id: '/providers'
+      path: '/providers'
+      fullPath: '/providers'
+      preLoaderRoute: typeof ProvidersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/integrations': {
@@ -204,11 +290,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EvalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console': {
+      id: '/console'
+      path: '/console'
+      fullPath: '/console'
+      preLoaderRoute: typeof ConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cli': {
       id: '/cli'
       path: '/cli'
       fullPath: '/cli'
       preLoaderRoute: typeof CliRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/builder': {
+      id: '/builder'
+      path: '/builder'
+      fullPath: '/builder'
+      preLoaderRoute: typeof BuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -237,13 +337,18 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BuilderRoute: BuilderRoute,
   CliRoute: CliRoute,
+  ConsoleRoute: ConsoleRoute,
   EvalsRoute: EvalsRoute,
   GovernanceRoute: GovernanceRoute,
   HistoryRoute: HistoryRoute,
   IntegrationsRoute: IntegrationsRoute,
+  LogsRoute: LogsRoute,
   McpRoute: McpRoute,
+  ProvidersRoute: ProvidersRoute,
   SettingsRoute: SettingsRoute,
+  SyncRoute: SyncRoute,
   SkillsSkillIdRoute: SkillsSkillIdRoute,
   SkillsIndexRoute: SkillsIndexRoute,
 }

@@ -11,3 +11,6 @@
 {"timestamp":"2026-06-02T07:57:51.002Z","command":"aiskill sync opencode","exitCode":0,"durationMs":9,"ok":true,"stdoutPreview":"Generated adapter wrappers for 12 skills","stderrPreview":""}
 {"timestamp":"2026-06-02T07:58:09.719Z","command":"aiskill run Run skill skillx-planner","exitCode":0,"durationMs":9,"ok":true,"stdoutPreview":"=== TOOL_START === | {\"tool\":\"system-audit\",\"read_only\":true} | === TOOL_END ===","stderrPreview":""}
 {"timestamp":"2026-06-02T07:59:29.321Z","command":"aiskill dedupe project-diagnostic Audits project structure and produces standardized AI context.","exitCode":0,"durationMs":10,"ok":true,"stdoutPreview":"No exact duplicate found","stderrPreview":""}
+{"timestamp":"2026-06-02T12:40:03.192Z","command":"aiskill doctor","exitCode":0,"durationMs":20,"ok":true,"stdoutPreview":"[doctor] scaffold check | - registry.yaml found | - runtime.yaml found","stderrPreview":""}
+{"timestamp":"2026-06-02T12:41:25.784Z","command":"aiskill doctor","exitCode":0,"durationMs":18,"ok":true,"stdoutPreview":"[doctor] scaffold check | - registry.yaml found | - runtime.yaml found","stderrPreview":""}
+{"timestamp":"2026-06-02T12:41:38.969Z","command":"aiskill doctor","exitCode":0,"durationMs":17,"ok":true,"stdoutPreview":"[doctor] scaffold check | - registry.yaml found | - runtime.yaml found","stderrPreview":""}

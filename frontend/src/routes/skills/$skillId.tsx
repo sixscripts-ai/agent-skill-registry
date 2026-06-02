@@ -1,74 +1,43 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { skillLabApi } from '~/features/skill-lab/api'
-import {
-  SectionCard,
-  EmptyState,
-  CommandButton,
-} from '~/features/skill-lab/components/primitives'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
+import { Button, LoadingState, EmptyState } from '~/components/ui'
+import { SkillDetailView } from '~/components/SkillDetail'
 
 export const Route = createFileRoute('/skills/$skillId')({
-  component: SkillDetail,
+  component: SkillDetailPage,
 })
 
-function SkillDetail() {
+function SkillDetailPage() {
   const { skillId } = Route.useParams()
-  const [registry, setRegistry] = useState<any>(null)
-
-  useEffect(() => {
-    skillLabApi.getRegistry().then(setRegistry).catch(() => {})
-  }, [])
-
-  const skill = registry?.skills?.find((s: any) => s.name === skillId)
-
-  if (!registry) return <div className="p-8 animate-pulse text-slate-500 text-center">Loading skill details...</div>
-
-  if (!skill) {
-    return <EmptyState title="Skill not found" body={`Could not find skill with ID: ${skillId}`} />
-  }
+  const navigate = useNavigate()
+  const registry = useApi(api.registry)
+  const skill = registry.data?.skills?.find((s: any) => s.name === skillId)
 
   return (
-    <div className="space-y-6">
-      <SectionCard title={skill.name} subtitle="Skill package inspector" actions={
-        <div className="flex gap-2">
-          <CommandButton tone="primary" onClick={() => skillLabApi.runPrompt(`Run skill ${skill.name}`)}>
-            Run Skill
-          </CommandButton>
-          <CommandButton onClick={() => skillLabApi.runEval()}>Run Eval</CommandButton>
-        </div>
-      }>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-4 rounded-lg bg-[#0a0a0a] border border-white/5 p-4 font-mono text-sm">
-            <div className="flex justify-between border-b border-white/5 pb-2">
-              <span className="text-slate-500">Tier</span>
-              <span className="text-cyan-400">{skill.tier}</span>
-            </div>
-            <div className="flex justify-between border-b border-white/5 pb-2">
-              <span className="text-slate-500">Trust Tier</span>
-              <span className="text-emerald-400">{skill.trustTier}</span>
-            </div>
-            <div className="flex justify-between border-b border-white/5 pb-2">
-              <span className="text-slate-500">Status</span>
-              <span className="text-slate-200">{skill.status}</span>
-            </div>
-            <div className="pt-2">
-              <span className="text-slate-500 block mb-1">Path</span>
-              <span className="text-slate-400 text-xs break-all">{skill.path}</span>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Description</h4>
-            <p className="text-sm leading-relaxed text-slate-300">{skill.description}</p>
-          </div>
-        </div>
-      </SectionCard>
+    <div className="space-y-6 gp-fade-in">
+      <button
+        onClick={() => navigate({ to: '/skills' })}
+        className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-white"
+        data-testid="skill-back"
+      >
+        <ArrowLeft size={15} /> Back to registry
+      </button>
 
-      <SectionCard title="SKILL.md preview" subtitle="File parser and markdown renderer">
+      {registry.loading ? (
+        <LoadingState label="Loading skill…" />
+      ) : !skill ? (
         <EmptyState
-          title="Coming soon"
-          body="Raw SKILL.md and frontmatter parsing will be connected in the next increment."
+          title="Skill not found"
+          body={`No skill named "${skillId}" in the registry.`}
+          actions={<Link to="/skills"><Button>Back to registry</Button></Link>}
         />
-      </SectionCard>
+      ) : (
+        <div className="mx-auto max-w-3xl gp-panel p-6">
+          <SkillDetailView skill={skill} />
+        </div>
+      )}
     </div>
   )
 }

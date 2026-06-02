@@ -1,60 +1,116 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { skillLabApi } from '~/features/skill-lab/api'
+import { FlaskConical, RefreshCw, Play } from 'lucide-react'
+import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
+import { relTime } from '~/lib/meta'
 import {
-  SectionCard,
-  StatusBadge,
-  CommandButton,
-} from '~/features/skill-lab/components/primitives'
+  PageHeader,
+  Card,
+  MetricCard,
+  Button,
+  Badge,
+  CheckRow,
+  CopyButton,
+  EmptyState,
+  TerminalPanel,
+  useToast,
+} from '~/components/ui'
 
 export const Route = createFileRoute('/evals')({
-  component: EvalsOverview,
+  component: EvalsPage,
 })
 
-function EvalsOverview() {
-  const [report, setReport] = useState<any>(null)
-  const [isBusy, setIsBusy] = useState(false)
+function EvalsPage() {
+  const toast = useToast()
+  const report = useApi(api.latestReport)
+  const [busy, setBusy] = useState(false)
 
-  const loadReport = () => {
-    skillLabApi.getLatestReport().then(setReport).catch(() => {})
-  }
+  const r = report.data
+  const checks = r?.data?.checks ?? []
 
-  useEffect(() => {
-    loadReport()
-  }, [])
-
-  const handleRunEval = async () => {
-    if (isBusy) return
-    setIsBusy(true)
-    await skillLabApi.runEval()
-    loadReport()
-    setIsBusy(false)
+  const runEval = async () => {
+    setBusy(true)
+    try {
+      await api.eval()
+      toast('Eval harness finished', 'emerald')
+      report.refetch()
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Failed', 'rose')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <SectionCard title="Eval Harness" subtitle="harness/reports/latest.json" actions={
-        <div className="flex gap-2">
-          <CommandButton onClick={loadReport} disabled={isBusy}>Refresh Report</CommandButton>
-          <CommandButton tone="primary" onClick={handleRunEval} disabled={isBusy}>Run Full Eval</CommandButton>
-        </div>
-      }>
-        <div className="flex flex-wrap gap-4 mb-6">
-          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-slate-900/40 px-4 py-2">
-            <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Status:</span>
-            <StatusBadge value={report?.ok ? 'passed' : 'pending'} tone={report?.ok ? 'green' : 'yellow'} />
+    <div className="space-y-6 gp-fade-in">
+      <PageHeader
+        icon={FlaskConical}
+        eyebrow="Quality"
+        title="Eval Reports"
+        description="Registry health checks rendered like code-review checks. Run the harness to validate every skill contract."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="secondary" icon={RefreshCw} onClick={() => report.refetch()} testid="eval-refresh">Refresh</Button>
+            <Button variant="primary" icon={Play} onClick={runEval} disabled={busy} testid="eval-run">Run Eval Harness</Button>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-slate-900/40 px-4 py-2">
-            <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Summary:</span>
-            <span className="text-sm font-medium text-cyan-400">{report?.summary ?? 'No summary available'}</span>
-          </div>
-        </div>
+        }
+      />
 
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Raw Report Payload</h4>
-        <pre className="max-h-[500px] overflow-auto rounded-xl border border-white/5 bg-[#0a0a0a] p-5 text-xs text-slate-300 font-mono shadow-inner">
-          {JSON.stringify(report?.data ?? { status: 'Waiting for report data...' }, null, 2)}
-        </pre>
-      </SectionCard>
+      {report.loading ? (
+        <Card className="p-6"><p className="text-sm text-slate-500">Loading…</p></Card>
+      ) : !r || (!r.timestamp && !r.summary) ? (
+        <EmptyState
+          title="No eval report yet"
+          body="Run the eval harness to validate registry health."
+          actions={<Button variant="primary" icon={Play} onClick={runEval}>Run Eval</Button>}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <MetricCard label="Status" value={r.ok ? 'Passed' : 'Review'} tone={r.ok ? 'emerald' : 'amber'} sub={relTime(r.timestamp)} />
+            <MetricCard label="Total Checks" value={r.total ?? checks.length} tone="sky" />
+            <MetricCard label="Passed" value={r.passed ?? 0} tone="emerald" />
+            <MetricCard label="Warnings" value={r.warnings ?? 0} tone="amber" sub={`${r.failed ?? 0} failed`} />
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="p-5">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Checks</h3>
+                <Badge tone={r.ok ? 'emerald' : 'amber'}>{r.summary}</Badge>
+              </div>
+              <div className="divide-y divide-white/[0.05]">
+                {checks.length === 0 ? (
+                  <p className="py-3 text-sm text-slate-500">No checks recorded.</p>
+                ) : (
+                  checks.map((c: any, i: number) => (
+                    <CheckRow key={i} label={c.name} detail={c.detail} status={c.status} />
+                  ))
+                )}
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+                <span className="font-mono text-xs text-slate-400">eval log output</span>
+                <CopyButton value={r.logOutput ?? ''} />
+              </div>
+              <TerminalPanel text={r.logOutput ?? ''} empty="No log output." className="max-h-[300px] rounded-none border-0" />
+            </Card>
+          </div>
+
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+              <span className="font-mono text-xs text-slate-400">raw report JSON</span>
+              <CopyButton value={JSON.stringify(r.data ?? {}, null, 2)} />
+            </div>
+            <pre className="max-h-[360px] overflow-auto p-4 font-mono text-[12px] text-slate-300">
+              {JSON.stringify(r.data ?? {}, null, 2)}
+            </pre>
+          </Card>
+        </>
+      )}
     </div>
   )
 }
