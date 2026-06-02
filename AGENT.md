@@ -732,7 +732,7 @@ export const generateResponse = internalAction({
       channelId: args.channelId,
     });
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5.1-codex-mini",
       messages: context,
     });
     const content = response.choices[0].message.content;

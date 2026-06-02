@@ -27,7 +27,7 @@ cp backend/.env.example backend/.env.local
 # Edit: DATABASE_URL (for Prisma), and for real LLM:
 # AI_API_KEY=your_tetrate_or_openai_key
 # AI_BASE_URL=https://api.router.tetrate.ai/v1   # or https://api.openai.com/v1
-# AI_MODEL=gpt-4o-mini
+# AI_MODEL=gpt-5.1-codex-mini
 
 # 3. Seed the DB (optional but recommended for full data + librarian:*)
 cd backend
@@ -49,7 +49,7 @@ See `backend/.env.example` and `frontend/.env.example`.
 Key ones for Librarian (real LLM):
 - `AI_API_KEY` — Tetrate router JWT or OpenAI key (preferred)
 - `AI_BASE_URL=https://api.router.tetrate.ai/v1`
-- `AI_MODEL=gpt-4o-mini`
+- `AI_MODEL=gpt-5.1-codex-mini`
 - Fallbacks: `OPENAI_API_KEY` + default model.
 
 Without keys: rich mock responses using yaml + omo flavor + stageable commands.
@@ -84,7 +84,7 @@ The system prompt for Librarian lives in `frontend/src/lib/librarian.ts` and bac
 
 ## Development Notes
 
-- No Convex (despite CLAUDE.md template — this is a TanStack/Express app).
+- No Convex (despite AGENT.md template — this is a TanStack/Express app).
 - API base: see `frontend/src/lib/api.ts` (proxies to backend or mocks).
 - To test Librarian with real key: set AI_* in backend/.env.local, restart backend, ask in UI.
 - Full bodies for all skills (not just librarian) are loaded via `loadSkillBody` for detail views and Librarian context.

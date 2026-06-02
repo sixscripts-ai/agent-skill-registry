@@ -640,7 +640,7 @@ Respond in character as Librarian.
   if (isOpenAI) {
     const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
     const baseURL = process.env.AI_BASE_URL;
-    const model = process.env.AI_MODEL || defaultModel || 'gpt-4o-mini';
+    const model = process.env.AI_MODEL || defaultModel || 'gpt-5.1-codex-mini';
     if (!apiKey) {
       return `[Librarian fallback - no AI_API_KEY]\n\nLibrarian is consulting the boulder of institutional knowledge...\n\n` + mockLibrarianAnswer(question, skillsContext);
     }

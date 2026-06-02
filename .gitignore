@@ -32,3 +32,9 @@ backend/dist/
 
 # Playwright
 /playwright/.auth/
+.gstack/
+
+# gstack design audit reports (regenerable artifacts)
+.gstack-report/
+# Local AI env helper
+backend/.env.ai
