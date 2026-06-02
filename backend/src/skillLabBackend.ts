@@ -3,6 +3,7 @@ import YAML from 'yaml'
 import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pkg from '@prisma/client';
+// @ts-ignore
 const { PrismaClient } = pkg;
 
 // Use neon db if available
