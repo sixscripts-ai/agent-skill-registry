@@ -7,6 +7,8 @@ import OpenAI from 'openai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 // @ts-ignore
 const { PrismaClient } = pkg;
 
@@ -30,6 +32,9 @@ function getProjectRoot(): string {
   return process.cwd();
 }
 const PROJECT_ROOT = getProjectRoot();
+
+const execAsync = promisify(exec);
+const AISKILL_CLI = path.join(PROJECT_ROOT, 'bin', 'aiskill.ts');
 
 // Use neon db if available
 const hasDb = !!process.env.DATABASE_URL;
@@ -446,14 +451,25 @@ async function executeAiskillSubcommand(
   let stdout = `[cloud-mock] Executed ${runArgs.join(' ')} successfully.`;
   let stderr = '';
   let exitCode = 0;
-
-  // Mock execution on Vercel
+ 
+  // Mock on Vercel; wire real TS CLI locally if bin present
   if (process.env.VERCEL) {
     stdout = `[VERCEL] Action execution for ${runArgs.join(' ')} is mocked in serverless environment.`;
+  } else if (fs.existsSync(AISKILL_CLI)) {
+    try {
+      const argStr = extraArgs.map(a => `"${String(a).replace(/"/g, '\\"')}"`).join(' ');
+      const { stdout: out, stderr: err } = await execAsync(`npx tsx "${AISKILL_CLI}" ${subcommand} ${argStr}`);
+      stdout = (out || '').trim();
+      stderr = (err || '').trim();
+      exitCode = 0;
+    } catch (e: any) {
+      // CLI non-zero (e.g. gate BLOCKED exits 2) or error -> capture
+      stdout = (e.stdout || '').toString().trim() || `[cli-error] ${e.message}`;
+      stderr = (e.stderr || '').toString().trim();
+      exitCode = e.code || 1;
+      ok = exitCode === 0;
+    }
   } else {
-    // If we're not on Vercel, we could run execFile here, 
-    // but for the sake of the database migration we'll just mock it
-    // since the whole system is moving to Neon.
     stdout = `[neon-local] Executed ${runArgs.join(' ')} locally with DB.`;
   }
 
@@ -538,16 +554,24 @@ export async function runGateCommand(command: string): Promise<CliResult & { gat
   }
   const result = await executeAiskillSubcommand('gate', [normalized])
   
-  // Parse command for dangerous patterns
-  const isDangerous = /sudo|rm\s+-rf|curl.*bash|wget.*bash|chmod\s+\+x/.test(normalized);
-  const verdict = isDangerous ? "BLOCKED" : "PASS";
+  // If CLI wired (local), trust its output for verdict; else fallback regex (for vercel)
+  let verdict = 'PASS';
+  let detail = 'Clear of blocked patterns.';
+  if (result.stdout && result.stdout.includes('BLOCKED')) {
+    verdict = 'BLOCKED';
+    detail = 'Matches blocked pattern (see CLI output).';
+  } else if (process.env.VERCEL) {
+    const isDangerous = /sudo|rm\s+-rf|curl.*bash|wget.*bash|chmod\s+\+x/.test(normalized);
+    verdict = isDangerous ? "BLOCKED" : "PASS";
+    detail = isDangerous ? "Matches blocked pattern." : "Clear of blocked patterns.";
+  }
   
   return {
     ...result,
     gate: {
       verdict,
       gates: [
-        { id: "G1", name: "Static Analysis Rule Check", status: isDangerous ? "blocked" : "pass", detail: isDangerous ? "Matches blocked pattern." : "Clear of blocked patterns." },
+        { id: "G1", name: "Static Analysis Rule Check", status: verdict === 'BLOCKED' ? "blocked" : "pass", detail },
         { id: "G2", name: "Registry Match Verification", status: "pass", detail: "Command matches execution scope." },
         { id: "G3", name: "Privilege Level Authorization", status: "pass", detail: "Authorized trust tier." },
         { id: "G4", name: "Host Enforcement Verification", status: "pass", detail: "Host target secure." }
