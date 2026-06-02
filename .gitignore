@@ -38,3 +38,8 @@ backend/dist/
 .gstack-report/
 # Local AI env helper
 backend/.env.ai
+
+# playwright mcp artifacts
+.playwright-mcp/
+*.png
+
