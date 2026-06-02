@@ -87,3 +87,27 @@ Future: wire console to prefer local bin/aiskill if present; add more doctor rul
 - No large rewrites; substance of design-review executed with native tools.
 
 Next: `git push && vercel --prod` (or wait for auto), re-seed if needed post-deploy, manual browser spot-check on live, then done.
+
+## Wiring CLI into Backend (post initial audit)
+- Updated `backend/src/skillLabBackend.ts`:
+  - Added execAsync + AISKILL_CLI path (reuses PROJECT_ROOT logic).
+  - In `executeAiskillSubcommand`: if !VERCEL && bin/aiskill.ts exists, `npx tsx bin/aiskill.ts <sub> <args>`; capture stdout/stderr/exit (handles gate exit=2 for BLOCKED).
+  - Fallback to old mock on VERCEL or missing bin.
+  - Updated `runGateCommand`: trusts CLI verdict from stdout when wired (uses improved dangerous patterns); keeps old regex only for VERCEL.
+- Impact: local dev now uses real robust CLI for doctor/gate/list/sync etc (real output, real exit codes, no brittle regex). Prod unchanged (still VERCEL mocks + DB log).
+- Local test: `runCliCommand("doctor")`, `runGateCommand("rm -rf /")` (BLOCKED + gate obj), list all return real CLI results ✅
+
+## Re-audit Post-Push
+- Pushed wiring + prior fixes.
+- Re-seeded prod (4 history + 5 drafts for rich state).
+- Re-captured via playwright: dashboard (confirmed "v2 · prod" + "Universal cockpit" + seeded recent runs + 5 drafts lifecycle), /history (clean "aiskill xxx" entries), /skills (drafts visible), /console.
+- All prior fixes live on prod. No new visual regressions. Wiring invisible on prod (as designed). Data rich, no empties.
+- Artifacts cleaned; tree clean.
+
+## Final State
+- Design audit complete (substance executed, small fixes only, omo.dev preserved).
+- aiskill fully rewritten + wired.
+- WALKTHROUGH covers all.
+- Ready for user review / further (e.g. expose CLI in prod? build step for bin? more doctor rules?).
+
+All per user directive. Minimal changes.
