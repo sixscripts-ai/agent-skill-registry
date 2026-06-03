@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import CodeMirror from '@uiw/react-codemirror'
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { vscodeDark } from '@uiw/codemirror-theme-vscode'
 import {
   FlaskConical,
   RefreshCw,
@@ -224,12 +227,16 @@ export function SkillDetailView({ skill }: { skill: any }) {
             {detail.loading ? (
               <LoadingState label="Loading SKILL.md..." />
             ) : (
-              <textarea
-                value={editorContent}
-                onChange={e => setEditorContent(e.target.value)}
-                className="w-full h-[380px] p-4 font-mono text-xs leading-relaxed text-slate-300 bg-[#040406] border border-white/[0.06] rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all resize-none"
-                data-testid="skill-raw-editor"
-              />
+              <div className="overflow-hidden rounded-xl border border-white/[0.06] focus-within:border-cyan-500/50 focus-within:ring-1 focus-within:ring-cyan-500/50 transition-all" data-testid="skill-raw-editor">
+                <CodeMirror
+                  value={editorContent}
+                  height="380px"
+                  theme={vscodeDark}
+                  extensions={[markdown({ base: markdownLanguage })]}
+                  onChange={setEditorContent}
+                  className="text-[13px]"
+                />
+              </div>
             )}
           </div>
         </div>
