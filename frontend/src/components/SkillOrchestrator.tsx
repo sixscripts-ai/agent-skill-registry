@@ -6,7 +6,9 @@ import {
   GripVertical, 
   Sparkles,
   Terminal,
-  Plus
+  Plus,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react'
 import { api } from '~/lib/api'
 import { useApi } from '~/lib/useApi'
@@ -21,8 +23,10 @@ type PipelineNode = {
 export function SkillOrchestrator() {
   const registry = useApi(() => api.registry(), [])
   const [pipeline, setPipeline] = useState<PipelineNode[]>([])
+  const [initialPrompt, setInitialPrompt] = useState('')
   const [running, setRunning] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
+  const [result, setResult] = useState<any>(null)
   const toast = useToast()
 
   const skills = registry.data?.skills || []
@@ -30,22 +34,46 @@ export function SkillOrchestrator() {
   const handleAdd = (skill: any) => {
     setPipeline(prev => [...prev, { instanceId: Math.random().toString(36).substring(2, 9), skill }])
     toast(`Added ${skill.name} to pipeline`, 'cyan')
+    setResult(null) // Clear previous result on pipeline change
   }
 
   const handleRemove = (instanceId: string) => {
     setPipeline(prev => prev.filter(p => p.instanceId !== instanceId))
+    setResult(null)
   }
 
   const handleExecute = async () => {
     if (pipeline.length === 0) return
     setRunning(true)
+    setResult(null)
     toast('Executing multi-skill pipeline...', 'violet')
     
-    // Simulate orchestration delay
-    setTimeout(() => {
+    try {
+      const payload = {
+        pipeline: pipeline.map(n => ({ skillName: n.skill.name })),
+        initialPrompt,
+        activeMcps: [] // Could be wired to active MCP settings later
+      }
+
+      const res = await fetch('http://localhost:8000/api/skills/run-pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      
+      const data = await res.json()
+      setResult(data)
+      
+      if (data.ok) {
+        toast('Pipeline execution completed successfully', 'emerald')
+      } else {
+        toast('Pipeline execution failed at some step', 'rose')
+      }
+    } catch (err: any) {
+      toast(err.message || 'Error running pipeline', 'rose')
+    } finally {
       setRunning(false)
-      toast('Pipeline execution completed successfully', 'emerald')
-    }, 2000)
+    }
   }
 
   if (registry.loading) return <LoadingState label="Loading registry..." />
@@ -74,7 +102,18 @@ export function SkillOrchestrator() {
       </div>
 
       {/* Pipeline Editor */}
-      <div className="flex-1 overflow-y-auto pb-20 pt-4">
+      <div className="flex-1 overflow-y-auto pb-20 pt-4 px-1 gp-custom-scrollbar">
+        
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-slate-300 mb-2">Initial Prompt Context</label>
+          <textarea
+            value={initialPrompt}
+            onChange={(e) => setInitialPrompt(e.target.value)}
+            placeholder="Describe the overarching task. This will be passed to the first skill in the chain..."
+            className="w-full h-24 bg-[#0a0a0f]/80 backdrop-blur-md border border-white/10 rounded-xl p-4 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all resize-none shadow-inner"
+          />
+        </div>
+
         <Reorder.Group 
           axis="y" 
           values={pipeline} 
@@ -137,6 +176,32 @@ export function SkillOrchestrator() {
             </span>
           </button>
         </div>
+
+        {/* Results Panel */}
+        {result && (
+          <div className="mt-8 gp-panel p-6 border-white/10 bg-black/40 shadow-inner">
+            <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              {result.ok ? <CheckCircle2 className="text-emerald-400" size={18} /> : <XCircle className="text-rose-400" size={18} />}
+              Pipeline Execution Report
+            </h4>
+            <div className="space-y-6">
+              {result.steps?.map((step: any) => (
+                <div key={step.stepIndex} className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3 border-b border-white/[0.05] pb-3">
+                    <span className="font-mono text-xs text-cyan-400 font-semibold">Step {step.stepIndex}: {step.skillName}</span>
+                    <span className={`text-xs px-2 py-1 rounded ${step.ok ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      {step.ok ? 'SUCCESS' : 'FAILED'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto gp-custom-scrollbar pr-2">
+                    {step.output}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       <CommandPalette 

@@ -18,7 +18,8 @@ import {
   runDedupeCommand,
   runLibrarianExplain,
   loadSkillBody,
-  runSkillSandbox
+  runSkillSandbox,
+  runSkillPipeline
 } from "./skillLabBackend.js";
 
 const app = express();
@@ -123,6 +124,13 @@ app.post("/api/librarian/explain", asyncHandler(async (req, res) => {
 app.post("/api/skills/run", asyncHandler(async (req, res) => {
   const { name = "", prompt = "", activeMcps = [] } = req.body || {};
   const result = await runSkillSandbox(name, prompt, activeMcps);
+  res.json(result);
+}));
+
+// Skill Pipeline Run (Orchestrator execution)
+app.post("/api/skills/run-pipeline", asyncHandler(async (req, res) => {
+  const { pipeline = [], initialPrompt = "", activeMcps = [] } = req.body || {};
+  const result = await runSkillPipeline(pipeline, initialPrompt, activeMcps);
   res.json(result);
 }));
 

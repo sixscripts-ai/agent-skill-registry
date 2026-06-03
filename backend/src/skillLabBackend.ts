@@ -1333,4 +1333,39 @@ Successfully executed prompt in the "${skillName}" skill sandbox. The simulated 
   return { ok: true, output: mockOutput };
 }
 
+export async function runSkillPipeline(pipeline: { skillName: string }[], initialPrompt: string, activeMcps: string[] = []) {
+  const steps: any[] = [];
+  let currentPrompt = initialPrompt;
 
+  for (let i = 0; i < pipeline.length; i++) {
+    const node = pipeline[i];
+    
+    // For the prompt, we inject the previous step's output if it's not the first step.
+    const runPrompt = i === 0 
+      ? currentPrompt 
+      : `Previous context/output from earlier pipeline step:\n---\n${currentPrompt}\n---\n\nPlease continue the pipeline execution using your skill's instructions.`;
+      
+    const result = await runSkillSandbox(node.skillName, runPrompt, activeMcps);
+    
+    steps.push({
+      stepIndex: i + 1,
+      skillName: node.skillName,
+      inputPrompt: runPrompt,
+      ok: result.ok,
+      output: result.output || (result as any).error || 'No output.'
+    });
+
+    if (!result.ok) {
+      break;
+    }
+
+    // Pass the output of this skill as the context for the next skill
+    currentPrompt = result.output;
+  }
+
+  return {
+    ok: steps.every(s => s.ok),
+    steps,
+    finalOutput: currentPrompt
+  };
+}
