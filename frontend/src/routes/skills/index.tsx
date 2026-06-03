@@ -156,7 +156,7 @@ function RegistryPage() {
 
           {/* Detail panel (desktop) */}
           <aside className="hidden lg:block">
-            <div className="sticky top-20">
+            <div className="sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto gp-custom-scrollbar">
               {selected ? (
                 <div className="gp-panel p-5">
                   <SkillDetailView skill={selected} />

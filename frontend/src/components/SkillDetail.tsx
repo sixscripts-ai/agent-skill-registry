@@ -359,14 +359,20 @@ export function SkillDetailView({ skill }: { skill: any }) {
             className="flex items-center gap-2 mt-4"
             data-testid="sandbox-form"
           >
-            <input
-              type="text"
+            <textarea
               value={promptInput}
               onChange={e => setPromptInput(e.target.value)}
-              placeholder="Ask the agent to execute a task using this skill..."
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleRunSandbox(e as any)
+                }
+              }}
+              placeholder="Ask the agent to execute a task... (Shift+Enter for newline)"
               disabled={running}
-              className="flex-1 h-10 px-4 text-xs bg-[#040406] border border-white/[0.08] rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 text-slate-200 disabled:opacity-40 transition-all"
+              className="flex-1 min-h-[40px] max-h-[120px] py-2.5 px-4 text-xs bg-[#040406] border border-white/[0.08] rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 text-slate-200 disabled:opacity-40 transition-all resize-none gp-custom-scrollbar"
               data-testid="sandbox-input"
+              rows={1}
             />
             <button
               type="submit"
