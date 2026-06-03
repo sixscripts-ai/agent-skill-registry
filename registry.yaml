@@ -1,135 +1,246 @@
-registry_version: "1.0.0"
-mode: "local-first"
-architecture: "provider-neutral"
+registry_version: 1.0.0
+mode: local-first
+architecture: provider-neutral
 last_synced: null
 skills:
-  - name: skillx-planner
-    tier: planning
-    path: shared/planning/skillx-planner
-    description: "Decomposes user objectives into structured task ledgers before execution."
-    trust_tier: T1
-    status: active
-  - name: provider-router
-    tier: functional
-    path: shared/functional/provider-router
-    description: "Selects model providers by task role without vendor lock-in."
-    trust_tier: T2
-    status: active
-  - name: mcp-router
-    tier: functional
-    path: shared/functional/mcp-router
-    description: "Routes tool access through configured MCP servers."
-    trust_tier: T2
-    status: active
-  - name: adapter-sync-manager
-    tier: functional
-    path: shared/functional/adapter-sync-manager
-    description: "Compiles universal skills into host-specific adapter wrappers."
-    trust_tier: T2
-    status: active
-  - name: system-audit
-    tier: atomic
-    path: shared/atomic/system-audit
-    description: "Runs a safe read-only audit of the current project directory."
-    trust_tier: T1
-    status: active
-  - name: security-gatekeeper
-    tier: governance
-    path: shared/governance/security-gatekeeper
-    description: "Applies G1-G4 verification gates before execution."
-    trust_tier: T4
-    status: active
-  - name: semantic-deduplicator
-    tier: governance
-    path: shared/governance/semantic-deduplicator
-    description: "Prevents duplicate or near-duplicate skills."
-    trust_tier: T2
-    status: active
-  - name: seagent-discoverer
-    tier: acquisition
-    path: shared/acquisition/seagent-discoverer
-    description: "Discovers missing capabilities from failed workflows."
-    trust_tier: T3
-    status: active
-  - name: skill-creator
-    tier: acquisition
-    path: shared/acquisition/skill-creator
-    description: "Creates new SKILL.md packages after checks."
-    trust_tier: T3
-    status: active
-  - name: automatic-curriculum-manager
-    tier: acquisition
-    path: shared/acquisition/automatic-curriculum-manager
-    description: "Proposes capability-building tasks from coverage and failure history."
-    trust_tier: T2
-    status: active
-  - name: eval-harness-architect
-    tier: evaluation
-    path: shared/evaluation/eval-harness-architect
-    description: "Builds and runs binary evals for skills and scripts."
-    trust_tier: T2
-    status: active
-  - name: multi-model-consensus-auditor
-    tier: evaluation
-    path: shared/evaluation/multi-model-consensus-auditor
-    description: "Uses a separate critic provider to review high-impact changes."
-    trust_tier: T3
-    status: active
-
-  # Librarian knowledge skills (Idea #5) — the explainer agent reads these to answer "what is X and how do I use it?"
-  - name: librarian:dashboard
-    tier: documentation
-    path: shared/documentation/librarian-dashboard
-    description: "Librarian knowledge: what the Dashboard shows and the fastest ways to operate the lab from it."
-    trust_tier: T1
-    status: active
-  - name: librarian:builder
-    tier: documentation
-    path: shared/documentation/librarian-builder
-    description: "Librarian knowledge: how to author, validate, and promote new portable skills using the Builder."
-    trust_tier: T1
-    status: active
-  - name: librarian:governance
-    tier: documentation
-    path: shared/documentation/librarian-governance
-    description: "Librarian knowledge: the T1–T4 trust model, security gates, and when human approval is required."
-    trust_tier: T1
-    status: active
-  - name: librarian:console
-    tier: documentation
-    path: shared/documentation/librarian-console
-    description: "Librarian knowledge: using the Console for aiskill commands, natural language prompts, and talking directly to Librarian."
-    trust_tier: T1
-    status: active
-  - name: librarian:providers
-    tier: documentation
-    path: shared/documentation/librarian-providers
-    description: "Librarian knowledge: how providers, models, and roles are configured for different agent tasks without lock-in."
-    trust_tier: T1
-    status: active
-
-  # Additional core skill documentation (for richer Librarian context and registry browsing)
-  - name: system-audit
-    tier: atomic
-    path: shared/atomic/system-audit
-    description: "Runs a safe read-only audit of the current project directory."
-    trust_tier: T1
-    status: active
-  - name: security-gatekeeper
-    tier: governance
-    path: shared/governance/security-gatekeeper
-    description: "Applies G1-G4 verification gates before execution."
-    trust_tier: T4
-    status: active
-  - name: provider-router
-    tier: functional
-    path: shared/functional/provider-router
-    description: "Selects model providers by task role without vendor lock-in."
-    trust_tier: T2
-    status: active
-  - name: skill-creator
-    tier: acquisition
-    path: shared/acquisition/skill-creator
-    description: "Creates new SKILL.md packages after checks."
-    trust_tier: T3
-    status: active
+- name: skillx-planner
+  tier: planning
+  path: shared/planning/skillx-planner
+  description: Decomposes user objectives into structured task ledgers before execution.
+  trust_tier: T1
+  status: active
+- name: provider-router
+  tier: functional
+  path: shared/functional/provider-router
+  description: Selects model providers by task role without vendor lock-in.
+  trust_tier: T2
+  status: active
+- name: mcp-router
+  tier: functional
+  path: shared/functional/mcp-router
+  description: Routes tool access through configured MCP servers.
+  trust_tier: T2
+  status: active
+- name: adapter-sync-manager
+  tier: functional
+  path: shared/functional/adapter-sync-manager
+  description: Compiles universal skills into host-specific adapter wrappers.
+  trust_tier: T2
+  status: active
+- name: system-audit
+  tier: atomic
+  path: shared/atomic/system-audit
+  description: Runs a safe read-only audit of the current project directory.
+  trust_tier: T1
+  status: active
+- name: security-gatekeeper
+  tier: governance
+  path: shared/governance/security-gatekeeper
+  description: Applies G1-G4 verification gates before execution.
+  trust_tier: T4
+  status: active
+- name: semantic-deduplicator
+  tier: governance
+  path: shared/governance/semantic-deduplicator
+  description: Prevents duplicate or near-duplicate skills.
+  trust_tier: T2
+  status: active
+- name: seagent-discoverer
+  tier: acquisition
+  path: shared/acquisition/seagent-discoverer
+  description: Discovers missing capabilities from failed workflows.
+  trust_tier: T3
+  status: active
+- name: skill-creator
+  tier: acquisition
+  path: shared/acquisition/skill-creator
+  description: Creates new SKILL.md packages after checks.
+  trust_tier: T3
+  status: active
+- name: automatic-curriculum-manager
+  tier: acquisition
+  path: shared/acquisition/automatic-curriculum-manager
+  description: Proposes capability-building tasks from coverage and failure history.
+  trust_tier: T2
+  status: active
+- name: eval-harness-architect
+  tier: evaluation
+  path: shared/evaluation/eval-harness-architect
+  description: Builds and runs binary evals for skills and scripts.
+  trust_tier: T2
+  status: active
+- name: multi-model-consensus-auditor
+  tier: evaluation
+  path: shared/evaluation/multi-model-consensus-auditor
+  description: Uses a separate critic provider to review high-impact changes.
+  trust_tier: T3
+  status: active
+- name: librarian:dashboard
+  tier: documentation
+  path: shared/documentation/librarian-dashboard
+  description: 'Librarian knowledge: what the Dashboard shows and the fastest ways
+    to operate the lab from it.'
+  trust_tier: T1
+  status: active
+- name: librarian:builder
+  tier: documentation
+  path: shared/documentation/librarian-builder
+  description: 'Librarian knowledge: how to author, validate, and promote new portable
+    skills using the Builder.'
+  trust_tier: T1
+  status: active
+- name: librarian:governance
+  tier: documentation
+  path: shared/documentation/librarian-governance
+  description: "Librarian knowledge: the T1\u2013T4 trust model, security gates, and\
+    \ when human approval is required."
+  trust_tier: T1
+  status: active
+- name: librarian:console
+  tier: documentation
+  path: shared/documentation/librarian-console
+  description: 'Librarian knowledge: using the Console for aiskill commands, natural
+    language prompts, and talking directly to Librarian.'
+  trust_tier: T1
+  status: active
+- name: librarian:providers
+  tier: documentation
+  path: shared/documentation/librarian-providers
+  description: 'Librarian knowledge: how providers, models, and roles are configured
+    for different agent tasks without lock-in.'
+  trust_tier: T1
+  status: active
+- name: system-audit
+  tier: atomic
+  path: shared/atomic/system-audit
+  description: Runs a safe read-only audit of the current project directory.
+  trust_tier: T1
+  status: active
+- name: security-gatekeeper
+  tier: governance
+  path: shared/governance/security-gatekeeper
+  description: Applies G1-G4 verification gates before execution.
+  trust_tier: T4
+  status: active
+- name: provider-router
+  tier: functional
+  path: shared/functional/provider-router
+  description: Selects model providers by task role without vendor lock-in.
+  trust_tier: T2
+  status: active
+- name: skill-creator
+  tier: acquisition
+  path: shared/acquisition/skill-creator
+  description: Creates new SKILL.md packages after checks.
+  trust_tier: T3
+  status: active
+- name: frontend-design
+  tier: functional
+  path: shared/functional/frontend-design
+  description: Create distinctive, polished, production-grade frontend interfaces
+    that avoid generic AI aesthetics.
+  trust_tier: T2
+  status: active
+- name: command:code-review
+  tier: functional
+  path: shared/functional/command-code-review
+  description: Provides a comprehensive, multi-agent code review for a GitHub Pull
+    Request.
+  trust_tier: T3
+  status: active
+- name: command:feature-dev
+  tier: planning
+  path: shared/planning/command-feature-dev
+  description: Guides the step-by-step implementation of new features using automated
+    explorer, review, and architect loops.
+  trust_tier: T2
+  status: active
+- name: agent:code-reviewer
+  tier: documentation
+  path: shared/documentation/agent-code-reviewer
+  description: Code Reviewer agent instructions focusing on style guides, bugs, and
+    compliance.
+  trust_tier: T1
+  status: active
+- name: agent:code-explorer
+  tier: documentation
+  path: shared/documentation/agent-code-explorer
+  description: Code Explorer agent instructions for scanning codebase structure and
+    mapping files.
+  trust_tier: T1
+  status: active
+- name: agent:code-architect
+  tier: documentation
+  path: shared/documentation/agent-code-architect
+  description: Code Architect agent instructions for designing system modules and
+    class designs.
+  trust_tier: T1
+  status: active
+- name: skill:command-dev
+  tier: acquisition
+  path: shared/acquisition/skill-command-dev
+  description: Instructions for building Claude CLI commands.
+  trust_tier: T2
+  status: active
+- name: skill:skill-dev
+  tier: acquisition
+  path: shared/acquisition/skill-skill-dev
+  description: Guidelines for authoring and structured compilation of portable AI
+    skills.
+  trust_tier: T2
+  status: active
+- name: skill:plugin-settings
+  tier: acquisition
+  path: shared/acquisition/skill-plugin-settings
+  description: Configuring, reading, and validating plugin-specific JSON settings.
+  trust_tier: T2
+  status: active
+- name: skill:plugin-structure
+  tier: acquisition
+  path: shared/acquisition/skill-plugin-structure
+  description: Managing the standard layout and manifest files of CLI plugins.
+  trust_tier: T2
+  status: active
+- name: skill:hook-dev
+  tier: acquisition
+  path: shared/acquisition/skill-hook-dev
+  description: Implementing pre-write, pre-command, and session validation hooks.
+  trust_tier: T2
+  status: active
+- name: skill:mcp-integration
+  tier: acquisition
+  path: shared/acquisition/skill-mcp-integration
+  description: Connecting, authenticating, and communicating with Model Context Protocol
+    servers.
+  trust_tier: T2
+  status: active
+- name: skill:agent-dev
+  tier: acquisition
+  path: shared/acquisition/skill-agent-dev
+  description: Creating customized prompts and persona triggers for sub-agents.
+  trust_tier: T2
+  status: active
+- name: command:create-plugin
+  tier: functional
+  path: shared/functional/command-create-plugin
+  description: Workflow command to scaffold, validate, and test new plugins.
+  trust_tier: T3
+  status: active
+- name: agent:agent-creator
+  tier: documentation
+  path: shared/documentation/agent-agent-creator
+  description: Prompt for generating specialized sub-agent definitions.
+  trust_tier: T1
+  status: active
+- name: agent:skill-reviewer
+  tier: documentation
+  path: shared/documentation/agent-skill-reviewer
+  description: Prompt for evaluating instruction readability and compliance.
+  trust_tier: T1
+  status: active
+- name: agent:plugin-validator
+  tier: documentation
+  path: shared/documentation/agent-plugin-validator
+  description: Prompt for static validation of manifest structure and tool scope.
+  trust_tier: T1
+  status: active

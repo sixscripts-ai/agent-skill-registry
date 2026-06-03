@@ -83,4 +83,9 @@ export const api = {
   // Librarian explainer (#1 + #4 + #5)
   librarianExplain: (payload: { question: string; route: string; context?: any }) =>
     post<any>('/librarian/explain', payload),
+
+  // Sandbox routes
+  runSkillSandbox: (name: string, prompt: string, activeMcps?: string[]) => post<any>('/skills/run', { name, prompt, activeMcps }),
+  saveRawSkill: (name: string, path: string, content: string) => post<any>('/skills/save-raw', { name, path, content }),
 }
+

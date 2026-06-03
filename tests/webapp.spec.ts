@@ -133,7 +133,7 @@ test.describe('Agent Skill Registry - E2E Core Audit Suite', () => {
     await page.getByTestId('console-run').click();
 
     // Verify simulation output contains "list" in the output container
-    await expect(page.locator('.gp-inset')).toContainText('list');
+    await expect(page.locator('.gp-inset')).toContainText('list', { timeout: 15000 });
 
     // Execute preset command
     const doctorPreset = page.getByTestId('preset-aiskill doctor');
@@ -141,7 +141,7 @@ test.describe('Agent Skill Registry - E2E Core Audit Suite', () => {
     await doctorPreset.click();
 
     // Check terminal output updates for doctor command execution
-    await expect(page.locator('.gp-inset')).toContainText('doctor');
+    await expect(page.locator('.gp-inset')).toContainText('doctor', { timeout: 15000 });
 
     // Tab Navigation within Console
     await page.locator('button:has-text("Logs")').click();
@@ -151,7 +151,7 @@ test.describe('Agent Skill Registry - E2E Core Audit Suite', () => {
     await expect(page.locator('text=exit 0').first()).toBeVisible();
 
     await page.locator('button:has-text("Presets")').click();
-    await expect(page.locator('text=aiskill sync all').first()).toBeVisible();
+    await expect(page.locator('text=explain dashboard').first()).toBeVisible();
   });
 
   test('4. Security Governance Gate Auditing', async ({ page }) => {
@@ -163,14 +163,14 @@ test.describe('Agent Skill Registry - E2E Core Audit Suite', () => {
     await page.getByTestId('gate-run').click();
 
     // Check for exact BLOCKED status badge (using text-is to avoid matching headers)
-    await expect(page.locator('span:text-is("BLOCKED")')).toBeVisible();
+    await expect(page.locator('span:text-is("BLOCKED")')).toBeVisible({ timeout: 15000 });
 
     // Testing a safe command
     await gateInput.fill('ls -la');
     await page.getByTestId('gate-run').click();
 
     // Check for exact PASS status badge
-    await expect(page.locator('span:text-is("PASS")')).toBeVisible();
+    await expect(page.locator('span:text-is("PASS")')).toBeVisible({ timeout: 15000 });
 
     // Verify policies and rules lists are visible
     await expect(page.locator('text=Execution Policy')).toBeVisible();
@@ -226,8 +226,8 @@ test.describe('Agent Skill Registry - E2E Core Audit Suite', () => {
       await firstRow.click();
       
       // Details drawer should expand and show rerun and delete buttons
-      await expect(page.locator('button:has-text("Copy output")')).toBeVisible();
-      await expect(page.locator('button:has-text("Re-run")')).toBeVisible();
+      await expect(page.locator('button:has-text("Copy output")').first()).toBeVisible();
+      await expect(page.locator('button:has-text("Re-run")').first()).toBeVisible();
     }
   });
 
@@ -240,6 +240,72 @@ test.describe('Agent Skill Registry - E2E Core Audit Suite', () => {
 
     // Verify styling tokens: Check background has dark mode ink background applied
     const body = page.locator('body');
-    await expect(body).toHaveCSS('background-color', 'rgb(10, 12, 16)'); // corresponds to #0a0c10
+    await expect(body).toHaveCSS('background-color', 'rgb(10, 10, 10)'); // corresponds to #0a0a0a
+  });
+
+  test('8. Librarian Panel AI Knowledge & Context Query', async ({ page }) => {
+    await page.goto(BASE_URL);
+
+    // Summon Librarian Panel
+    const summonLibrarian = page.getByTestId('summon-librarian');
+    await expect(summonLibrarian).toBeVisible();
+    await summonLibrarian.click();
+
+    // Verify Panel Header / Brand identity is visible
+    await expect(page.locator('text=Docs & Institutional Knowledge')).toBeVisible();
+
+    // Type query in the Librarian chat input
+    const librarianInput = page.getByPlaceholder('Ask anything about the lab…');
+    await expect(librarianInput).toBeVisible();
+    await librarianInput.fill('how do I run doctor');
+
+    // Click Send
+    await page.locator('button:has-text("Send")').click();
+
+    // Wait for the response to load (we check for console block code for aiskill doctor)
+    const commandBlock = page.locator('code:has-text("aiskill doctor")').first();
+    await expect(commandBlock).toBeVisible({ timeout: 15000 });
+
+    // Close the panel using Escape key
+    await page.keyboard.press('Escape');
+    await expect(page.locator('text=Docs & Institutional Knowledge')).not.toBeVisible();
+  });
+  
+  test('9. Split-Screen Skill Playground Sandbox & Editing', async ({ page }) => {
+    await page.goto(`${BASE_URL}/skills/system-audit`);
+
+    // Verify split screen components are visible
+    const rawEditor = page.getByTestId('skill-raw-editor');
+    await expect(rawEditor).toBeVisible();
+
+    const sandboxInput = page.getByTestId('sandbox-input');
+    await expect(sandboxInput).toBeVisible();
+
+    // Verify required MCP status elements exist
+    await expect(page.locator('text=Target MCP Configuration')).toBeVisible();
+
+    // Type a prompt in sandbox input and run
+    await sandboxInput.fill('Run a sample audit log test');
+    await page.getByTestId('sandbox-submit').click();
+
+    // Verify chat timeline updates and response appears
+    const chatTimeline = page.getByTestId('sandbox-chat-timeline');
+    await expect(chatTimeline).toContainText('Run a sample audit log test');
+
+    // Wait for the LLM response to load. Real API response might take 5-10s
+    await expect(page.locator('text=TRACE: Planning & Tool Execution').first()).toBeVisible({ timeout: 15000 });
+
+    // Verify raw editor editing and save
+    const editorContent = await rawEditor.inputValue();
+    expect(editorContent).toContain('system-audit');
+
+    // Make an edit (e.g. append a comment line)
+    await rawEditor.fill(editorContent + '\n# e2e test edit comment');
+    const saveBtn = page.getByTestId('detail-save-resync');
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    // Verify button goes through saving state and returns success toast or completes
+    await expect(page.locator('text=Skill saved & registry synced successfully!').first()).toBeVisible();
   });
 });

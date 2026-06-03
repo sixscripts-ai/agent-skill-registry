@@ -7,15 +7,22 @@ generator client {
 }
 
 model Skill {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  tier        String
-  path        String
-  description String
-  trustTier   String
-  status      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   Int      @id @default(autoincrement())
+  name                 String   @unique
+  tier                 String
+  path                 String
+  description          String
+  trustTier            String
+  status               String
+  requiredProviderRole String   @default("executor")
+  requiredMcps         String   @default("[]")
+  allowedTools         String   @default("[]")
+  sideEffects          String   @default("[]")
+  triggerPhrases       String   @default("[]")
+  instructions         String   @default("")
+  references           String   @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model ProviderConfig {

@@ -127,26 +127,8 @@ export function extractStageableCommands(text: string): string[] {
   return Array.from(new Set(cmds)).slice(0, 4);
 }
 
-export function buildLibrarianResponse(question: string, route: string, base: any) {
-  const q = question.toLowerCase()
-
-  let text = base.what + "\n\n" + base.why + "\n\nHow to use it:\n" + base.how.map((h: string, i: number) => `${i+1}. ${h}`).join('\n')
-
-  const sources = [...(base.sources || [])]
-
-  if (q.includes('how') || q.includes('use') || q.includes('do')) {
-    text = `**How to use this part of the lab**\n\n${base.how.map((h: string, i: number) => `${i+1}. ${h}`).join('\n')}\n\n${base.why}`
-  }
-
-  if (q.includes('what') || q.includes('is')) {
-    text = `**What it is**\n\n${base.what}\n\n**Why it exists**\n\n${base.why}`
-  }
-
-  // Very basic registry-aware flavor (will be replaced by real /librarian/explain + skill loading)
-  if (q.includes('skill') || route.includes('skill')) {
-    text += "\n\nYou can find the authoritative definition in the Skill Registry. Many behaviors are actually defined in individual SKILL.md files that agents load at runtime."
-    sources.push("registry.yaml + active skills")
-  }
-
-  return { text, sources }
+export function buildLibrarianResponse(_question: string, _route: string, base: any) {
+  const text = `${base.what}\n\n${base.why}\n\n*(Librarian is currently in offline fallback mode. Connect to the backend for live registry matching and AI model query support.)*`;
+  const sources = [...(base.sources || [])];
+  return { text, sources };
 }

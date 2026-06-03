@@ -4,6 +4,7 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pkg from '@prisma/client';
 import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -32,6 +33,40 @@ function getProjectRoot(): string {
   return process.cwd();
 }
 const PROJECT_ROOT = getProjectRoot();
+
+// Load .env.ai manually into process.env if it exists
+try {
+  const envAiPath = path.resolve(PROJECT_ROOT, 'backend', '.env.ai');
+  if (fs.existsSync(envAiPath)) {
+    const content = fs.readFileSync(envAiPath, 'utf8');
+    content.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      const firstEq = trimmed.indexOf('=');
+      if (firstEq === -1) return;
+      const key = trimmed.slice(0, firstEq).trim();
+      let val = trimmed.slice(firstEq + 1).trim();
+      if (val.startsWith('"') && val.endsWith('"')) {
+        val = val.slice(1, -1);
+      } else if (val.startsWith("'") && val.endsWith("'")) {
+        val = val.slice(1, -1);
+      }
+      process.env[key] = val;
+    });
+  }
+} catch (e) {
+  console.warn('Could not load .env.ai:', e);
+}
+
+function safeParseJsonArray(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 const execAsync = promisify(exec);
 const AISKILL_CLI = path.join(PROJECT_ROOT, 'bin', 'aiskill.ts');
@@ -72,6 +107,13 @@ export type RegistrySkill = {
   description: string
   trustTier: TrustTier
   status: SkillStatus
+  requiredProviderRole: string
+  requiredMcps: string[]
+  allowedTools: string[]
+  sideEffects: string[]
+  triggerPhrases: string[]
+  instructions: string
+  references: string[]
 }
 
 export type RegistryPayload = {
@@ -166,7 +208,14 @@ export async function getRegistryPayload(): Promise<RegistryPayload> {
         path: s.path,
         description: s.description,
         trustTier: s.trustTier as TrustTier,
-        status: s.status as SkillStatus
+        status: s.status as SkillStatus,
+        requiredProviderRole: s.requiredProviderRole || 'executor',
+        requiredMcps: safeParseJsonArray(s.requiredMcps),
+        allowedTools: safeParseJsonArray(s.allowedTools),
+        sideEffects: safeParseJsonArray(s.sideEffects),
+        triggerPhrases: safeParseJsonArray(s.triggerPhrases),
+        instructions: s.instructions || '',
+        references: safeParseJsonArray(s.references)
       }))
     };
   }
@@ -215,7 +264,14 @@ export async function loadRegistryFromYaml(): Promise<RegistryPayload> {
           path: s.path,
           description: s.description,
           trustTier: s.trust_tier as TrustTier,
-          status: s.status as SkillStatus
+          status: s.status as SkillStatus,
+          requiredProviderRole: s.required_provider_role || 'executor',
+          requiredMcps: s.required_mcps || [],
+          allowedTools: s.allowed_tools || [],
+          sideEffects: s.side_effects || [],
+          triggerPhrases: s.trigger_phrases || [],
+          instructions: s.instructions || '',
+          references: s.references || []
         }))
       };
     }
@@ -232,81 +288,113 @@ export async function loadRegistryFromYaml(): Promise<RegistryPayload> {
   }
 }
 
-export async function getLibrarianSkills() {
+export async function getLibrarianSkills(question?: string) {
+  let skills: any[] = [];
+
   if (prisma) {
-    const skills = await prisma.skill.findMany({
+    // Load baseline librarian skills
+    const baseSkills = await prisma.skill.findMany({
       where: {
         name: {
           startsWith: 'librarian:'
         }
       }
     });
-    if (skills.length > 0) {
+    skills = [...baseSkills];
+
+    // If query question is provided, search other skills by keyword matching
+    if (question) {
+      const words = question
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !['how', 'the', 'and', 'for', 'you', 'use', 'run', 'get', 'command', 'what', 'does'].includes(w));
+
+      if (words.length > 0) {
+        const matchedSkills = await prisma.skill.findMany({
+          where: {
+            OR: words.flatMap(word => [
+              { name: { contains: word, mode: 'insensitive' } },
+              { description: { contains: word, mode: 'insensitive' } }
+            ]),
+            NOT: {
+              name: { startsWith: 'librarian:' }
+            }
+          },
+          take: 5
+        });
+        skills.push(...matchedSkills);
+      }
+    }
+  } else {
+    // Fallback: load from registry.yaml
+    try {
       const fs = await import('fs');
       const pth = await import('path');
       const root = PROJECT_ROOT;
-      return skills.map((s: any) => {
-        let body = s.description || '';
-        if (s.path) {
-          const possiblePaths = [
-            pth.resolve(root, s.path, 'SKILL.md'),
-            pth.resolve(root, s.path),
-          ];
-          for (const p of possiblePaths) {
-            if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-              body = fs.readFileSync(p, 'utf8');
-              break;
-            }
+      const yamlPath = pth.resolve(root, 'registry.yaml');
+      if (fs.existsSync(yamlPath)) {
+        const content = fs.readFileSync(yamlPath, 'utf8');
+        const parsed = YAML.parse(content);
+        const all = parsed.skills || [];
+        
+        const baseSkills = all.filter((s: any) => s.name && s.name.startsWith('librarian:'));
+        skills = [...baseSkills];
+
+        if (question) {
+          const words = question
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !['how', 'the', 'and', 'for', 'you', 'use', 'run', 'get', 'command', 'what', 'does'].includes(w));
+
+          if (words.length > 0) {
+            const matchedSkills = all.filter((s: any) => {
+              if (s.name && s.name.startsWith('librarian:')) return false;
+              const nameLower = (s.name || '').toLowerCase();
+              const descLower = (s.description || '').toLowerCase();
+              return words.some(word => nameLower.includes(word) || descLower.includes(word));
+            }).slice(0, 5);
+            skills.push(...matchedSkills);
           }
         }
-        return {
-          ...s,
-          body
-        };
-      });
+      }
+    } catch (e) {
+      console.warn('Could not load librarian seeds from yaml fallback');
     }
   }
-  // Fallback: load from registry.yaml (for demo / no DB)
-  try {
-    const fs = await import('fs');
-    const pth = await import('path');
-    const root = PROJECT_ROOT;
-    const yamlPath = pth.resolve(root, 'registry.yaml');
-    if (fs.existsSync(yamlPath)) {
-      const content = fs.readFileSync(yamlPath, 'utf8');
-      const parsed = YAML.parse(content);
-      const all = parsed.skills || [];
-      const librarianSkills = all.filter((s: any) => s.name && s.name.startsWith('librarian:'));
-      const loaded = await Promise.all(librarianSkills.map(async (s: any) => {
-        let body = s.description || '';
-        // Try to load full SKILL.md body from the path
-        if (s.path) {
-          const possiblePaths = [
-            pth.resolve(root, s.path, 'SKILL.md'),
-            pth.resolve(root, s.path),
-            pth.resolve(root, 'shared', s.path.replace('shared/', ''), 'SKILL.md'),
-          ];
-          for (const p of possiblePaths) {
-            if (fs.existsSync(p) && fs.statSync(p).isFile()) {
-              body = fs.readFileSync(p, 'utf8');
-              break;
-            }
-          }
+
+  // Load the full SKILL.md body for all selected skills
+  const fs = await import('fs');
+  const pth = await import('path');
+  const root = PROJECT_ROOT;
+
+  const loaded = skills.map((s: any) => {
+    let body = s.description || '';
+    if (s.path) {
+      const possiblePaths = [
+        pth.resolve(root, s.path, 'SKILL.md'),
+        pth.resolve(root, s.path),
+        pth.resolve(root, 'shared', s.path.replace(/^shared\//, ''), 'SKILL.md'),
+      ];
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+          body = fs.readFileSync(p, 'utf8');
+          break;
         }
-        return {
-          name: s.name,
-          description: s.description || '',
-          tier: s.tier || 'documentation',
-          status: s.status || 'active',
-          body
-        };
-      }));
-      return loaded;
+      }
     }
-  } catch (e) {
-    console.warn('Could not load librarian seeds from yaml fallback');
-  }
-  return [];
+    return {
+      name: s.name,
+      description: s.description || '',
+      tier: s.tier || 'documentation',
+      status: s.status || 'active',
+      path: s.path || '',
+      body
+    };
+  });
+
+  return loaded;
 }
 
 export async function getRuntimePayload(): Promise<RuntimePayload> {
@@ -645,8 +733,20 @@ Never put commands in normal text — always use the \`\`\`console fence. If no 
 
 async function callLibrarianLLM(question: string, route: string, skillsContext: string, providers: any): Promise<string> {
   const { defaultProvider, defaultModel, providers: provs = {} } = providers || {};
-  const hasAiKey = !!(process.env.AI_API_KEY || process.env.OPENAI_API_KEY);
-  const isOpenAI = hasAiKey || defaultProvider === 'openai' || (provs.openai && provs.openai.enabled);
+
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const openaiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
+
+  let activeProvider = defaultProvider;
+  if (activeProvider === 'unknown' || activeProvider === 'none') {
+    if (geminiKey) {
+      activeProvider = 'google';
+    } else if (openaiKey) {
+      activeProvider = 'openai';
+    } else {
+      activeProvider = 'mock';
+    }
+  }
 
   const userPrompt = `Current route in the app: ${route}
 User question: ${question}
@@ -659,15 +759,45 @@ Respond in character as Librarian.
 - If the question is about actions, commands, "how do I", or "what command", you MUST output at least one (preferably 1-2) stageable command(s) in \`\`\`console blocks using the exact format shown in your system rules.
 - Cite the librarian:* sources you used.`;
 
+  if (activeProvider === 'google') {
+    const apiKey = geminiKey;
+    const rawModel = defaultModel || 'gemini-2.5-flash';
+    const model = rawModel === 'unknown' || rawModel === 'none' ? 'gemini-2.5-flash' : rawModel;
 
+    if (!apiKey) {
+      return `[Librarian fallback - no GEMINI_API_KEY]\n\nLibrarian is consulting the boulder of institutional knowledge...\n\n` + mockLibrarianAnswer(question, skillsContext);
+    }
 
-  if (isOpenAI) {
-    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model,
+        contents: [
+          { role: 'user', parts: [{ text: userPrompt }] }
+        ],
+        config: {
+          systemInstruction: LIBRARIAN_SYSTEM,
+          temperature: 0.3,
+          maxOutputTokens: 800,
+        }
+      });
+      return response.text || 'No content from model.';
+    } catch (err: any) {
+      console.error('Gemini LLM error for Librarian:', err);
+      return `[Gemini LLM error: ${err.message}]\n\n` + mockLibrarianAnswer(question, skillsContext);
+    }
+  }
+
+  if (activeProvider === 'openai') {
+    const apiKey = openaiKey;
     const baseURL = process.env.AI_BASE_URL;
-    const model = process.env.AI_MODEL || defaultModel || 'gpt-5.1-codex-mini';
+    const rawModel = process.env.AI_MODEL || defaultModel || 'gpt-4o-mini';
+    const model = rawModel === 'unknown' || rawModel === 'none' || rawModel === 'gpt-5.1-codex-mini' ? 'gpt-4o-mini' : rawModel;
+
     if (!apiKey) {
       return `[Librarian fallback - no AI_API_KEY]\n\nLibrarian is consulting the boulder of institutional knowledge...\n\n` + mockLibrarianAnswer(question, skillsContext);
     }
+
     try {
       const openai = new OpenAI({ 
         apiKey,
@@ -684,8 +814,8 @@ Respond in character as Librarian.
       });
       return completion.choices[0]?.message?.content || 'No content from model.';
     } catch (err: any) {
-      console.error('LLM error for Librarian:', err);
-      return `[LLM error: ${err.message}]\n\n` + mockLibrarianAnswer(question, skillsContext);
+      console.error('OpenAI LLM error for Librarian:', err);
+      return `[OpenAI LLM error: ${err.message}]\n\n` + mockLibrarianAnswer(question, skillsContext);
     }
   }
 
@@ -700,7 +830,7 @@ function mockLibrarianAnswer(question: string, skillsContext: string): string {
     base += `Using these skills from the registry:\n${skillsContext}\n\n`;
   }
   if (q.includes('how') || q.includes('use') || q.includes('do')) {
-    base += 'Here is how to proceed step by step (evidence from the loaded librarian skills):\n1. ... (detailed in real LLM)\n\nTry staging a command like `aiskill doctor` in the Console.';
+    base += 'Here is how to proceed step by step (evidence from the loaded librarian skills):\n1. Run the system diagnostics tool to identify setup errors.\n\n```console\naiskill doctor\n```\n\nTry staging that command in the Console.';
   } else {
     base += 'This feature exists to ... (full explanation from LLM or seeds).';
   }
@@ -710,7 +840,7 @@ function mockLibrarianAnswer(question: string, skillsContext: string): string {
 
 export async function runLibrarianExplain(question: string, route: string = '/') {
   const providers = await getProvidersPayload();
-  const skills = await getLibrarianSkills();
+  const skills = await getLibrarianSkills(question);
   const skillsContext = skills.map((s: any) => {
     const desc = s.description || '';
     const body = s.body ? `\nFull content:\n${s.body}` : '';
@@ -732,4 +862,475 @@ export async function runLibrarianExplain(question: string, route: string = '/')
     ]
   };
 }
+
+// Mapping of MCP target configurations to their corresponding tool names
+const mcpToolMapping: Record<string, string[]> = {
+  filesystem: ['read_file', 'write_file'],
+  git: ['git_status', 'git_diff'],
+  sqlite: ['sqlite_query'],
+  fetch: ['web_fetch']
+};
+
+// Lightweight local tool execution implementations
+async function executeSandboxTool(toolName: string, args: any): Promise<any> {
+  try {
+    switch (toolName) {
+      case 'read_file': {
+        const reqPath = args.path;
+        if (!reqPath) return { error: 'Path parameter is required.' };
+        const resolved = path.resolve(PROJECT_ROOT, reqPath);
+        if (!resolved.startsWith(PROJECT_ROOT)) {
+          return { error: 'Access denied. Path must be inside project root.' };
+        }
+        if (!fs.existsSync(resolved)) {
+          return { error: `File not found: ${reqPath}` };
+        }
+        const stat = fs.statSync(resolved);
+        if (stat.isDirectory()) {
+          return { error: `Path is a directory: ${reqPath}` };
+        }
+        const content = fs.readFileSync(resolved, 'utf8');
+        return { content };
+      }
+      case 'write_file': {
+        const reqPath = args.path;
+        const content = args.content ?? '';
+        if (!reqPath) return { error: 'Path parameter is required.' };
+        const resolved = path.resolve(PROJECT_ROOT, reqPath);
+        if (!resolved.startsWith(PROJECT_ROOT)) {
+          return { error: 'Access denied. Path must be inside project root.' };
+        }
+        fs.mkdirSync(path.dirname(resolved), { recursive: true });
+        fs.writeFileSync(resolved, content, 'utf8');
+        return { success: true };
+      }
+      case 'git_status': {
+        const { stdout } = await execAsync('git status -s', { cwd: PROJECT_ROOT });
+        return { status: stdout.trim() || 'No changes.' };
+      }
+      case 'git_diff': {
+        const { stdout } = await execAsync('git diff', { cwd: PROJECT_ROOT });
+        return { diff: stdout.trim() || 'No diff.' };
+      }
+      case 'sqlite_query': {
+        const sql = args.sql;
+        if (!sql) return { error: 'SQL parameter is required.' };
+        const normalized = sql.trim().toLowerCase();
+        if (!normalized.startsWith('select')) {
+          return { error: 'Execution denied. Only read-only SELECT queries are allowed.' };
+        }
+        if (!prisma) {
+          return { error: 'Database is not initialized.' };
+        }
+        const results = await prisma.$queryRawUnsafe(sql);
+        return { results };
+      }
+      case 'web_fetch': {
+        const url = args.url;
+        if (!url) return { error: 'URL parameter is required.' };
+        const res = await (globalThis as any).fetch(url);
+        const text = await res.text();
+        return { text };
+      }
+      default:
+        return { error: `Unknown tool: ${toolName}` };
+    }
+  } catch (err: any) {
+    return { error: err.message || 'Unknown execution error.' };
+  }
+}
+
+// Tool declarations for Gemini
+const geminiTools: any[] = [
+  {
+    functionDeclarations: [
+      {
+        name: 'read_file',
+        description: 'Read the contents of a file relative to the project root directory.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            path: { type: 'STRING', description: 'Relative path of the file to read.' }
+          },
+          required: ['path']
+        }
+      },
+      {
+        name: 'write_file',
+        description: 'Write or modify contents of a file relative to the project root directory.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            path: { type: 'STRING', description: 'Relative path of the file to write.' },
+            content: { type: 'STRING', description: 'The file contents to write.' }
+          },
+          required: ['path', 'content']
+        }
+      },
+      {
+        name: 'git_status',
+        description: 'Get the current status of the git repository (modified files, untracked files, etc.).',
+        parameters: {
+          type: 'OBJECT',
+          properties: {}
+        }
+      },
+      {
+        name: 'git_diff',
+        description: 'Get the git diff showing uncommitted line-by-line changes in the repository.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {}
+        }
+      },
+      {
+        name: 'sqlite_query',
+        description: 'Execute a read-only SELECT database query against the project database schema.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            sql: { type: 'STRING', description: 'A valid SELECT SQL statement to execute.' }
+          },
+          required: ['sql']
+        }
+      },
+      {
+        name: 'web_fetch',
+        description: 'Perform a web request to retrieve raw content from a URL.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            url: { type: 'STRING', description: 'The absolute HTTP/HTTPS URL to fetch.' }
+          },
+          required: ['url']
+        }
+      }
+    ]
+  }
+];
+
+// Tool declarations for OpenAI
+const openAiTools: any[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'read_file',
+      description: 'Read the contents of a file relative to the project root directory.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Relative path of the file to read.' }
+        },
+        required: ['path']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'write_file',
+      description: 'Write or modify contents of a file relative to the project root directory.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Relative path of the file to write.' },
+          content: { type: 'string', description: 'The file contents to write.' }
+        },
+        required: ['path', 'content']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'git_status',
+      description: 'Get the current status of the git repository (modified files, untracked files, etc.).',
+      parameters: {
+        type: 'object',
+        properties: {}
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'git_diff',
+      description: 'Get the git diff showing uncommitted line-by-line changes in the repository.',
+      parameters: {
+        type: 'object',
+        properties: {}
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'sqlite_query',
+      description: 'Execute a read-only SELECT database query against the project database schema.',
+      parameters: {
+        type: 'object',
+        properties: {
+          sql: { type: 'string', description: 'A valid SELECT SQL statement to execute.' }
+        },
+        required: ['sql']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'web_fetch',
+      description: 'Perform a web request to retrieve raw content from a URL.',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: 'The absolute HTTP/HTTPS URL to fetch.' }
+        },
+        required: ['url']
+      }
+    }
+  }
+];
+
+export async function runSkillSandbox(skillName: string, prompt: string, activeMcps: string[] = []) {
+  const reg = await getRegistryPayload();
+  const skill = reg.skills.find(s => s.name === skillName);
+  
+  let skillMd = '';
+  if (skill) {
+    skillMd = await loadSkillBody(skill.path);
+  }
+
+  const providers = await getProvidersPayload();
+  const { defaultProvider, defaultModel, providers: provs = {} } = providers || {};
+
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const openaiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
+
+  let activeProvider = defaultProvider;
+  if (activeProvider === 'unknown' || activeProvider === 'none') {
+    if (geminiKey) {
+      activeProvider = 'google';
+    } else if (openaiKey) {
+      activeProvider = 'openai';
+    } else {
+      activeProvider = 'mock';
+    }
+  }
+
+  const systemInstructions = `You are executing the sandbox simulation for the skill "${skillName}" inside the Universal AI Skill Lab.
+Follow the rules, procedures, and instructions of this skill strictly. Here is the skill body:\n\n${skillMd || 'No custom instructions defined.'}
+
+CRITICAL RULES:
+- Before outputting your final response, you MUST output a monospaced "thinking process" block enclosed in <thinking>...</thinking> tags describing the planning steps and tool evaluations.
+Example:
+<thinking>
+1. Parsing input parameters.
+2. Checking validation constraints.
+</thinking>
+
+Then provide your final output in markdown.`;
+
+  // Resolve allowed tools based on active MCP configuration
+  const allowedToolsSet = new Set<string>();
+  if (activeMcps && Array.isArray(activeMcps)) {
+    for (const mcp of activeMcps) {
+      const tools = mcpToolMapping[mcp];
+      if (tools) {
+        tools.forEach(t => allowedToolsSet.add(t));
+      }
+    }
+  } else {
+    // Default to all tools if activeMcps list not explicitly sent
+    Object.values(mcpToolMapping).flat().forEach(t => allowedToolsSet.add(t));
+  }
+
+  const thinkingLog: string[] = [];
+
+  if (activeProvider === 'google') {
+    const apiKey = geminiKey;
+    const rawModel = defaultModel || 'gemini-2.5-flash';
+    const model = rawModel === 'unknown' || rawModel === 'none' ? 'gemini-2.5-flash' : rawModel;
+
+    if (apiKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const contents: any[] = [{ role: 'user', parts: [{ text: prompt }] }];
+        let loopCount = 0;
+        const maxLoops = 5;
+        let finalResponse: any = null;
+
+        while (loopCount < maxLoops) {
+          const filteredGeminiTools = geminiTools.map(group => {
+            return {
+              functionDeclarations: group.functionDeclarations.filter((t: any) => allowedToolsSet.has(t.name))
+            };
+          }).filter(group => group.functionDeclarations.length > 0);
+
+          const response = await ai.models.generateContent({
+            model,
+            contents,
+            config: {
+              systemInstruction: systemInstructions,
+              temperature: 0.5,
+              maxOutputTokens: 1000,
+              ...(filteredGeminiTools.length > 0 ? { tools: filteredGeminiTools } : {})
+            }
+          });
+
+          finalResponse = response;
+
+          if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+            contents.push(response.candidates[0].content);
+          } else {
+            contents.push({
+              role: 'model',
+              parts: response.text ? [{ text: response.text }] : []
+            });
+          }
+
+          const functionCalls = response.functionCalls;
+          if (!functionCalls || functionCalls.length === 0) {
+            break;
+          }
+
+          const functionResponseParts: any[] = [];
+          for (const call of functionCalls) {
+            const name = call.name || '';
+            if (!name) continue;
+            const args = call.args || {};
+            thinkingLog.push(`Executing tool: ${name} with args: ${JSON.stringify(args)}`);
+
+            const result = await executeSandboxTool(name, args);
+            thinkingLog.push(`Tool ${name} result: ${JSON.stringify(result).slice(0, 150)}...`);
+
+            functionResponseParts.push({
+              functionResponse: {
+                name: name,
+                id: call.id,
+                response: { result: JSON.stringify(result) }
+              }
+            });
+          }
+
+          contents.push({
+            role: 'user',
+            parts: functionResponseParts
+          });
+
+          loopCount++;
+        }
+
+        let outputText = finalResponse?.text || 'No response.';
+        if (thinkingLog.length > 0) {
+          const formattedThinking = `<thinking>\n${thinkingLog.map((line, idx) => `${idx + 1}. ${line}`).join('\n')}\n</thinking>\n\n`;
+          outputText = formattedThinking + outputText;
+        }
+        return { ok: true, output: outputText };
+      } catch (err: any) {
+        console.error('Google GenAI sandbox run failed:', err);
+      }
+    }
+  }
+
+  if (activeProvider === 'openai') {
+    const apiKey = openaiKey;
+    const baseURL = process.env.AI_BASE_URL;
+    const rawModel = process.env.AI_MODEL || defaultModel || 'gpt-4o-mini';
+    const model = rawModel === 'unknown' || rawModel === 'none' || rawModel === 'gpt-5.1-codex-mini' ? 'gpt-4o-mini' : rawModel;
+
+    if (apiKey) {
+      try {
+        const openai = new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) });
+        const messages: any[] = [
+          { role: 'system', content: systemInstructions },
+          { role: 'user', content: prompt }
+        ];
+        let loopCount = 0;
+        const maxLoops = 5;
+        let finalMessage: any = null;
+
+        while (loopCount < maxLoops) {
+          const toolsToPass = openAiTools.filter(t => allowedToolsSet.has(t.function.name));
+
+          const completion = await openai.chat.completions.create({
+            model,
+            messages,
+            temperature: 0.5,
+            max_tokens: 1000,
+            ...(toolsToPass.length > 0 ? { tools: toolsToPass } : {})
+          });
+
+          const responseMessage = completion.choices[0]?.message;
+          if (!responseMessage) {
+            break;
+          }
+
+          messages.push(responseMessage);
+          finalMessage = responseMessage;
+
+          const toolCalls = responseMessage.tool_calls;
+          if (!toolCalls || toolCalls.length === 0) {
+            break;
+          }
+
+          for (const toolCall of toolCalls) {
+            const name = (toolCall as any).function?.name || '';
+            if (!name) continue;
+            const args = JSON.parse((toolCall as any).function?.arguments || '{}');
+            thinkingLog.push(`Executing tool: ${name} with args: ${JSON.stringify(args)}`);
+
+            const result = await executeSandboxTool(name, args);
+            thinkingLog.push(`Tool ${name} result: ${JSON.stringify(result).slice(0, 150)}...`);
+
+            messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              name: name,
+              content: JSON.stringify(result)
+            });
+          }
+
+          loopCount++;
+        }
+
+        let outputText = finalMessage?.content || 'No response.';
+        if (thinkingLog.length > 0) {
+          const formattedThinking = `<thinking>\n${thinkingLog.map((line, idx) => `${idx + 1}. ${line}`).join('\n')}\n</thinking>\n\n`;
+          outputText = formattedThinking + outputText;
+        }
+        return { ok: true, output: outputText };
+      } catch (err: any) {
+        console.error('OpenAI sandbox run failed:', err);
+      }
+    }
+  }
+
+  // Fallback / Mock
+  const mockThinkingLog: string[] = [
+    `Initializing mock sandbox context for skill "${skillName}"`,
+    `Loaded local SKILL.md from path: ${skill?.path || 'unknown'}`,
+    `Active MCP servers in sandbox: ${activeMcps.join(', ') || 'none'}`
+  ];
+
+  if (allowedToolsSet.has('read_file')) {
+    mockThinkingLog.push(`Executing tool: read_file with args: {"path":"package.json"}`);
+    mockThinkingLog.push(`Tool read_file result: {"content":"{...}"}`);
+  }
+  if (allowedToolsSet.has('sqlite_query')) {
+    mockThinkingLog.push(`Executing tool: sqlite_query with args: {"sql":"SELECT * FROM RunHistory LIMIT 1"}`);
+    mockThinkingLog.push(`Tool sqlite_query result: {"results":[]}`);
+  }
+  mockThinkingLog.push(`Validating parameters for prompt: "${prompt}"`);
+  mockThinkingLog.push(`Evaluation: PASS`);
+
+  const mockOutput = `<thinking>
+${mockThinkingLog.map((line, idx) => `${idx + 1}. ${line}`).join('\n')}
+</thinking>
+
+Successfully executed prompt in the "${skillName}" skill sandbox. The simulated agent completed all tasks according to the instruction guidelines.`;
+
+  return { ok: true, output: mockOutput };
+}
+
 

@@ -15,6 +15,7 @@ import {
   FileText,
   ShieldCheck,
   Rocket,
+  Pencil,
   PanelRightOpen,
   Trash2,
   FolderOpen,
@@ -452,11 +453,13 @@ function DraftsList({
 }
 
 /* ------------------------------------------------------------ SkillBuilder */
-export function SkillBuilder() {
+export function SkillBuilder({ editName }: { editName?: string }) {
   const navigate = useNavigate()
   const toast = useToast()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<Form>(() => {
+    // When editing, don't restore from localStorage — the fetched skill data takes precedence
+    if (editName) return EMPTY
     try {
       const cached = localStorage.getItem(STORAGE_KEY)
       if (cached) return { ...EMPTY, ...JSON.parse(cached) }
@@ -465,6 +468,75 @@ export function SkillBuilder() {
     }
     return EMPTY
   })
+
+  // In edit mode, fetch the existing skill and pre‑fill the form
+  const editing = editName && editName.length > 0
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!editName) return
+    let cancelled = false
+    setEditLoading(true)
+    setEditError(null)
+    api
+      .skill(editName)
+      .then((data: any) => {
+        if (cancelled || !data?.name) return
+        // Map the registry payload back into the Form shape
+        setForm({
+          name: data.name || '',
+          description: data.description || '',
+          tier: data.tier || 'functional',
+          trustTier: data.trustTier || 'T2',
+          status: data.status || 'draft',
+          requiredProviderRole: data.requiredProviderRole || 'executor',
+          requiredMcps: Array.isArray(data.requiredMcps) ? data.requiredMcps : [],
+          allowedTools: Array.isArray(data.allowedTools) ? data.allowedTools : [],
+          sideEffects: Array.isArray(data.sideEffects) ? data.sideEffects : [],
+          triggerPhrases: Array.isArray(data.triggerPhrases) ? data.triggerPhrases : [],
+          instructions: data.instructions || '',
+          references: Array.isArray(data.references) ? data.references : [],
+        })
+        toast(`Loaded "${editName}" for editing`, 'emerald')
+      })
+      .catch((e: any) => {
+        if (!cancelled) setEditError(e instanceof Error ? e.message : 'Failed to load skill')
+      })
+      .finally(() => {
+        if (!cancelled) setEditLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [editName])
+
+  // When editing, show a loading/error overlay until the skill data is ready
+  if (editing && editLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-sm text-slate-400">Loading "{editName}" for editing…</p>
+      </div>
+    )
+  }
+  if (editing && editError) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/[0.07] px-5 py-4 text-center">
+          <p className="text-sm font-medium text-rose-200">Could not load skill</p>
+          <p className="mt-1 text-xs text-rose-300/70">{editError}</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="mt-3"
+            onClick={() => navigate({ to: '/skills' })}
+          >
+            Back to registry
+          </Button>
+        </div>
+      </div>
+    )
+  }
   const [checks, setChecks] = useState<{ overall?: string; checks: any[] }>({ checks: [] })
   const [busy, setBusy] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
@@ -578,8 +650,14 @@ export function SkillBuilder() {
     action('create', async () => {
       const res = await api.createSkill(form)
       localStorage.removeItem(STORAGE_KEY)
-      toast(`Skill "${res.skill.name}" created`, 'emerald')
-      navigate({ to: '/skills' })
+      // In edit mode, go back to the skill detail page; otherwise go to the registry
+      if (editName) {
+        toast(`Skill "${res.skill.name}" updated`, 'emerald')
+        navigate({ to: '/skills/$skillId', params: { skillId: res.skill.name } })
+      } else {
+        toast(`Skill "${res.skill.name}" created`, 'emerald')
+        navigate({ to: '/skills' })
+      }
     })
 
   const reset = () => {
@@ -825,10 +903,10 @@ export function SkillBuilder() {
                 size="lg"
                 onClick={create}
                 disabled={busy === 'create' || !form.name || !form.description}
-                icon={Rocket}
+                icon={editName ? Pencil : Rocket}
                 testid="builder-create-btn"
               >
-                Create Skill
+                {editName ? 'Update Skill' : 'Create Skill'}
               </Button>
               <Button variant="ghost" size="lg" onClick={reset} testid="builder-cancel-btn">
                 Cancel
@@ -887,17 +965,19 @@ export function SkillBuilder() {
         </Button>
       </div>
 
-      {/* Saved drafts — list, load, delete */}
-      <DraftsList
-        drafts={(drafts.data ?? []) as any[]}
-        loading={drafts.loading}
-        error={drafts.error}
-        busyAction={busy}
-        deletingName={deletingName}
-        onRefresh={drafts.refetch}
-        onLoad={loadDraft}
-        onDelete={deleteDraft}
-      />
+      {/* Saved drafts — list, load, delete (hidden in edit mode) */}
+      {!editName ? (
+        <DraftsList
+          drafts={(drafts.data ?? []) as any[]}
+          loading={drafts.loading}
+          error={drafts.error}
+          busyAction={busy}
+          deletingName={deletingName}
+          onRefresh={drafts.refetch}
+          onLoad={loadDraft}
+          onDelete={deleteDraft}
+        />
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[210px_minmax(0,1fr)_380px]">
         {/* Stepper */}
@@ -954,8 +1034,8 @@ export function SkillBuilder() {
                 Next <ChevronRight size={15} />
               </Button>
             ) : (
-              <Button variant="primary" onClick={create} disabled={busy === 'create' || !form.name || !form.description} icon={Rocket} testid="builder-create-footer">
-                Create Skill
+              <Button variant="primary" onClick={create} disabled={busy === 'create' || !form.name || !form.description} icon={editName ? Pencil : Rocket} testid="builder-create-footer">
+                {editName ? 'Update Skill' : 'Create Skill'}
               </Button>
             )}
           </div>

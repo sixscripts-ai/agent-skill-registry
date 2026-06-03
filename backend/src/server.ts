@@ -17,7 +17,8 @@ import {
   runGateCommand,
   runDedupeCommand,
   runLibrarianExplain,
-  loadSkillBody
+  loadSkillBody,
+  runSkillSandbox
 } from "./skillLabBackend.js";
 
 const app = express();
@@ -118,6 +119,35 @@ app.post("/api/librarian/explain", asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+// Skill Sandbox Run (Split-screen sandbox execution)
+app.post("/api/skills/run", asyncHandler(async (req, res) => {
+  const { name = "", prompt = "", activeMcps = [] } = req.body || {};
+  const result = await runSkillSandbox(name, prompt, activeMcps);
+  res.json(result);
+}));
+
+// Skill Sandbox Save Raw (Write raw SKILL.md back to disk and re-sync)
+app.post("/api/skills/save-raw", asyncHandler(async (req, res) => {
+  const { name = "", path: skillPath = "", content = "" } = req.body || {};
+  if (!name || !skillPath) {
+    return res.status(400).json({ ok: false, error: "Name and path are required" });
+  }
+
+  const fs = await import("fs");
+  const path = await import("path");
+  // Resolve the SKILL.md file path under the target directory
+  const fullPath = path.resolve(process.cwd(), skillPath, "SKILL.md");
+
+  // Write content to SKILL.md
+  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+  await fs.promises.writeFile(fullPath, content, "utf8");
+
+  // Automatically trigger sync
+  const syncResult = await runSyncCommand("all");
+
+  res.json({ ok: true, syncResult });
+}));
+
 // Database Mutations
 app.put("/api/settings", asyncHandler(async (req, res) => {
   const existing = await prisma.providerConfig.findFirst();
@@ -148,6 +178,7 @@ app.post("/api/skills/validate", asyncHandler(async (req, res) => {
 
 app.post("/api/skills/create", asyncHandler(async (req, res) => {
   const form = req.body || {};
+  const serialize = (v: unknown) => JSON.stringify(v ?? []);
   const skill = await prisma.skill.upsert({
     where: { name: form.name || 'untitled' },
     update: {
@@ -156,6 +187,13 @@ app.post("/api/skills/create", asyncHandler(async (req, res) => {
       trustTier: form.trustTier || 'T2',
       status: form.status || 'active',
       path: `shared/${form.tier || 'functional'}/${form.name || 'untitled'}`,
+      requiredProviderRole: form.requiredProviderRole || 'executor',
+      requiredMcps: serialize(form.requiredMcps),
+      allowedTools: serialize(form.allowedTools),
+      sideEffects: serialize(form.sideEffects),
+      triggerPhrases: serialize(form.triggerPhrases),
+      instructions: form.instructions || '',
+      references: serialize(form.references),
     },
     create: {
       name: form.name || 'untitled',
@@ -164,6 +202,13 @@ app.post("/api/skills/create", asyncHandler(async (req, res) => {
       trustTier: form.trustTier || 'T2',
       status: form.status || 'active',
       path: `shared/${form.tier || 'functional'}/${form.name || 'untitled'}`,
+      requiredProviderRole: form.requiredProviderRole || 'executor',
+      requiredMcps: serialize(form.requiredMcps),
+      allowedTools: serialize(form.allowedTools),
+      sideEffects: serialize(form.sideEffects),
+      triggerPhrases: serialize(form.triggerPhrases),
+      instructions: form.instructions || '',
+      references: serialize(form.references),
     }
   });
   res.json({ ok: true, skill });
@@ -175,22 +220,39 @@ app.post("/api/skills/draft", asyncHandler(async (req, res) => {
   const tier = payload?.tier || 'functional';
   const skillPath = `shared/${tier}/${skillName}`;
 
+  const payloadDesc = payload?.description || '';
+  const serialize = (v: unknown) => JSON.stringify(v ?? []);
+
   const skill = await prisma.skill.upsert({
     where: { name: skillName },
     update: {
-      description: payload?.description || '',
+      description: payloadDesc,
       tier,
       trustTier: payload?.trustTier || 'T2',
       status: payload?.status || 'draft',
       path: skillPath,
+      requiredProviderRole: payload?.requiredProviderRole || 'executor',
+      requiredMcps: serialize(payload?.requiredMcps),
+      allowedTools: serialize(payload?.allowedTools),
+      sideEffects: serialize(payload?.sideEffects),
+      triggerPhrases: serialize(payload?.triggerPhrases),
+      instructions: payload?.instructions || '',
+      references: serialize(payload?.references),
     },
     create: {
       name: skillName,
-      description: payload?.description || '',
+      description: payloadDesc,
       tier,
       trustTier: payload?.trustTier || 'T2',
       status: payload?.status || 'draft',
       path: skillPath,
+      requiredProviderRole: payload?.requiredProviderRole || 'executor',
+      requiredMcps: serialize(payload?.requiredMcps),
+      allowedTools: serialize(payload?.allowedTools),
+      sideEffects: serialize(payload?.sideEffects),
+      triggerPhrases: serialize(payload?.triggerPhrases),
+      instructions: payload?.instructions || '',
+      references: serialize(payload?.references),
     }
   });
 

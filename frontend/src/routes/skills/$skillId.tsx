@@ -34,7 +34,7 @@ function SkillDetailPage() {
           actions={<Link to="/skills"><Button>Back to registry</Button></Link>}
         />
       ) : (
-        <div className="mx-auto max-w-3xl gp-panel p-6">
+        <div className="mx-auto max-w-6xl gp-glass-panel p-6 gp-radial-glow gp-radial-glow-violet">
           <SkillDetailView skill={skill} />
         </div>
       )}
