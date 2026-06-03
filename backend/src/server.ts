@@ -221,10 +221,34 @@ ${payload.body}
   res.json({ ok: true, skill });
 }));
 
-app.delete("/api/skills/draft/:id", asyncHandler(async (req, res) => {
-  const id = parseInt(req.params.id);
-  if (!isNaN(id)) await prisma.skill.delete({ where: { id } });
-  res.json({ ok: true });
+app.delete("/api/skills/draft/:name", asyncHandler(async (req, res) => {
+  const name = req.params.name;
+  if (!name) return res.status(400).json({ detail: "Draft name is required" });
+
+  // Look up first so we can clean up on-disk SKILL.md for librarian:* drafts
+  // and return 404 if the draft doesn't exist (Prisma P2025 would otherwise
+  // surface as a 500).
+  const existing = await prisma.skill.findUnique({ where: { name } });
+  if (!existing) {
+    return res.status(404).json({ detail: `Draft "${name}" not found` });
+  }
+
+  await prisma.skill.delete({ where: { name } });
+
+  // Mirror the writer logic in POST /api/skills/draft: if the deleted row
+  // pointed at a librarian:* path with a SKILL.md on disk, remove it.
+  if (name.startsWith("librarian:") && existing.path) {
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const fullPath = path.resolve(process.cwd(), existing.path, "SKILL.md");
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    } catch (e) {
+      console.warn("Could not remove SKILL.md for deleted librarian draft:", e);
+    }
+  }
+
+  res.json({ ok: true, name });
 }));
 
 // History / Danger

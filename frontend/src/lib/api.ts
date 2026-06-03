@@ -72,7 +72,7 @@ export const api = {
   validateSkill: (body: unknown) => post<any>('/skills/validate', body),
   createSkill: (body: unknown) => post<any>('/skills/create', body),
   saveDraft: (body: unknown) => post<any>('/skills/draft', body),
-  deleteDraft: (id: string) => del<any>(`/skills/draft/${id}`),
+  deleteDraft: (name: string) => del<any>(`/skills/draft/${encodeURIComponent(name)}`),
 
   // history / danger
   deleteRun: (id: string) => del<any>(`/history/${id}`),

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   Activity,
   Library,
@@ -7,11 +7,7 @@ import {
   Wand2,
   ArrowRight,
   AlertTriangle,
-  Stethoscope,
-  RefreshCw,
   ShieldCheck,
-  TerminalSquare,
-  RotateCw,
 } from 'lucide-react'
 import { api } from '~/lib/api'
 import { useApi } from '~/lib/useApi'
@@ -24,7 +20,6 @@ import {
   Badge,
   EmptyState,
   AdapterBadge,
-  useToast,
 } from '~/components/ui'
 
 export const Route = createFileRoute('/')({
@@ -40,8 +35,6 @@ const LIFECYCLE = [
 ]
 
 function Dashboard() {
-  const toast = useToast()
-  const navigate = useNavigate()
   const registry = useApi(api.registry)
   const health = useApi(api.health)
   const runtime = useApi(api.runtime)
@@ -57,14 +50,7 @@ function Dashboard() {
   const t4Active = skills.filter((s: any) => s.trustTier === 'T4' && s.status === 'active')
   const runs = history.data?.entries ?? []
 
-  const quick = [
-    { label: 'Run Diagnostics', icon: Stethoscope, fn: async () => { await api.doctor(); toast('Diagnostics complete') } },
-    { label: 'Sync All', icon: RefreshCw, fn: async () => { await api.sync('all'); toast('Adapters synced'); adapters.refetch() } },
-    { label: 'Run Eval', icon: FlaskConical, fn: async () => { await api.eval(); toast('Eval finished'); navigate({ to: '/evals' }) } },
-    { label: 'Safe Audit', icon: ShieldCheck, fn: async () => { await api.runPrompt('Run a safe system audit.'); toast('Audit complete'); history.refetch() } },
-    { label: 'Open Console', icon: TerminalSquare, fn: async () => navigate({ to: '/console', search: { stage: undefined } as any }) },
-    { label: 'Refresh Registry', icon: RotateCw, fn: async () => { registry.refetch(); toast('Registry refreshed') } },
-  ]
+
 
   return (
     <div className="space-y-7 gp-fade-in">
@@ -110,72 +96,67 @@ function Dashboard() {
         />
       </div>
 
-      {/* Lifecycle pipeline */}
+      {/* Lifecycle pipeline — visual stepper */}
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-white">Skill lifecycle</h3>
-              <Link to="/skills" className="text-xs font-medium text-cyan-300 hover:text-cyan-200">
+          <Link to="/skills" className="text-xs font-medium text-cyan-300 hover:text-cyan-200">
             View registry →
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {LIFECYCLE.map((stage, i) => (
-            <div key={stage.key} className="relative">
-              <div className="gp-panel-2 px-4 py-3.5">
-                <p className="text-2xl font-bold text-white">{counts[stage.key] ?? 0}</p>
-                <p className="mt-0.5 text-xs text-slate-500">{stage.label}</p>
+        <div className="flex items-center gap-0">
+          {LIFECYCLE.map((stage, i) => {
+            const count = counts[stage.key] ?? 0
+            const isLast = i === LIFECYCLE.length - 1
+            const toneMap: Record<string, string> = {
+              slate: 'border-slate-500/30 bg-slate-500/10 text-slate-400',
+              amber: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+              cyan: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
+              emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+            }
+            const dotMap: Record<string, string> = {
+              slate: 'bg-slate-500',
+              amber: 'bg-amber-400',
+              cyan: 'bg-cyan-400',
+              emerald: 'bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400/50',
+            }
+            return (
+              <div key={stage.key} className="flex flex-1 items-center">
+                <div className={cn('flex-1 rounded-xl border px-3 py-3 text-center', toneMap[stage.tone])}>
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <span className={cn('h-1.5 w-1.5 rounded-full', dotMap[stage.tone])} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{stage.label}</span>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{count}</p>
+                </div>
+                {!isLast && (
+                  <ArrowRight size={13} className="mx-1 shrink-0 text-slate-700" />
+                )}
               </div>
-              {i < LIFECYCLE.length - 1 ? (
-                <ArrowRight
-                  size={14}
-                  className="absolute -right-2.5 top-1/2 hidden -translate-y-1/2 text-slate-700 lg:block"
-                />
-              ) : null}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Build CTA */}
-        <div className="lg:col-span-2">
-            <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.08] via-ink-900 to-cyan-400/[0.06] p-6 gp-grid-bg">
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="max-w-md">
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-400">
-                  <Wand2 size={12} /> Builder-first
-                </span>
-                <h3 className="mt-3 text-xl font-bold text-white">Build a New Skill</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
-                  Create, validate, and activate a portable SKILL.md package for your universal
-                  registry — provider-neutral by design.
-                </p>
-              </div>
-              <Link to="/builder">
-                <Button className="text-nowrap whitespace-nowrap" variant="primary" size="lg" icon={Wand2} testid="dashboard-open-builder">
-                  Open Skill Builder
-                </Button>
-              </Link>
-            </div>
+      {/* Build CTA — full width, Quick Actions live in the topbar dropdown */}
+      <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.08] via-ink-900 to-cyan-400/[0.06] p-6 gp-grid-bg">
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-400">
+              <Wand2 size={12} /> Builder-first
+            </span>
+            <h3 className="mt-3 text-xl font-bold text-white">Build a New Skill</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+              Create, validate, and activate a portable SKILL.md package for your universal
+              registry — provider-neutral by design.
+            </p>
           </div>
+          <Link to="/builder">
+            <Button className="text-nowrap whitespace-nowrap" variant="primary" size="lg" icon={Wand2} testid="dashboard-open-builder">
+              Open Skill Builder
+            </Button>
+          </Link>
         </div>
-
-        {/* Quick actions */}
-        <SectionCard title="Quick Actions" subtitle="Simulated runtime operations">
-          <div className="grid grid-cols-2 gap-2">
-            {quick.map((q) => (
-              <button
-                key={q.label}
-                data-testid={`dash-quick-${q.label.toLowerCase().replace(/\s+/g, '-')}`}
-                onClick={() => q.fn()}
-                className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 transition-colors hover:border-sky-500/30 hover:text-white"
-              >
-                <q.icon size={15} className="text-slate-500" />
-                <span className="truncate">{q.label}</span>
-              </button>
-            ))}
-          </div>
-        </SectionCard>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

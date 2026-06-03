@@ -16,8 +16,13 @@ import {
   ShieldCheck,
   Rocket,
   PanelRightOpen,
+  Trash2,
+  FolderOpen,
+  RefreshCw,
+  Inbox,
 } from 'lucide-react'
 import { api } from '~/lib/api'
+import { useApi } from '~/lib/useApi'
 import {
   TIERS,
   TRUST_TIERS,
@@ -33,6 +38,7 @@ import {
   CheckRow,
   CopyButton,
   Drawer,
+  StatusBadge,
   TierBadge,
   TrustTierBadge,
   useToast,
@@ -69,6 +75,34 @@ const EMPTY: Form = {
 }
 
 const STORAGE_KEY = 'uaisl.builder.draft'
+const DRAFT_SNAPSHOT_PREFIX = 'uaisl.builder.draft.snapshot.'
+
+const draftSnapshotKey = (name: string) => `${DRAFT_SNAPSHOT_PREFIX}${name || 'untitled-skill'}`
+
+function readDraftSnapshot(name: string): Form | null {
+  try {
+    const raw = localStorage.getItem(draftSnapshotKey(name))
+    return raw ? (JSON.parse(raw) as Form) : null
+  } catch {
+    return null
+  }
+}
+
+function writeDraftSnapshot(name: string, form: Form) {
+  try {
+    localStorage.setItem(draftSnapshotKey(name), JSON.stringify(form))
+  } catch {
+    /* noop */
+  }
+}
+
+function clearDraftSnapshot(name: string) {
+  try {
+    localStorage.removeItem(draftSnapshotKey(name))
+  } catch {
+    /* noop */
+  }
+}
 
 const STEPS = [
   { id: 'purpose', label: 'Purpose', icon: Target },
@@ -297,6 +331,126 @@ function ChecksPanel({
   )
 }
 
+/* ------------------------------------------------------------ DraftsList */
+type DraftRow = {
+  name: string
+  tier?: string
+  trustTier?: string
+  status?: string
+  path?: string
+  description?: string
+}
+
+function DraftsList({
+  drafts,
+  loading,
+  error,
+  busyAction,
+  deletingName,
+  onRefresh,
+  onLoad,
+  onDelete,
+}: {
+  drafts: DraftRow[]
+  loading: boolean
+  error: string | null
+  busyAction: string | null
+  deletingName: string | null
+  onRefresh: () => void
+  onLoad: (name: string) => void
+  onDelete: (name: string) => void
+}) {
+  return (
+    <Card className="p-5" data-testid="builder-drafts-panel">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Inbox size={15} className="text-cyan-400" />
+          <div>
+            <h3 className="text-sm font-semibold text-white">Saved drafts</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Drafts and quarantined skills stored in the registry DB.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={RefreshCw}
+          onClick={onRefresh}
+          disabled={loading}
+          testid="builder-drafts-refresh"
+        >
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </Button>
+      </div>
+
+      {error ? (
+        <div
+          data-testid="builder-drafts-error"
+          className="rounded-lg border border-rose-500/30 bg-rose-500/[0.07] px-3 py-2 text-[12px] text-rose-200"
+        >
+          {error}
+        </div>
+      ) : drafts.length === 0 ? (
+        <div
+          data-testid="builder-drafts-empty"
+          className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] px-3 py-6 text-center text-[12px] text-slate-500"
+        >
+          {loading ? 'Loading drafts…' : 'No drafts saved yet. Use "Save Draft" or "Save to Quarantine" above.'}
+        </div>
+      ) : (
+        <ul className="space-y-2" data-testid="builder-drafts-list">
+          {drafts.map((d) => {
+            const isDeleting = deletingName === d.name || busyAction === 'delete-draft'
+            const isLoading = busyAction === 'load-draft'
+            return (
+              <li
+                key={d.name}
+                className="gp-row flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
+                data-testid={`builder-draft-row-${d.name}`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-mono text-[12.5px] text-cyan-200">{d.name}</p>
+                  {d.description ? (
+                    <p className="mt-0.5 truncate text-[11px] text-slate-500">{d.description}</p>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {d.tier ? <TierBadge tier={d.tier} /> : null}
+                  {d.trustTier ? <TrustTierBadge trust={d.trustTier} /> : null}
+                  {d.status ? <StatusBadge status={d.status} /> : null}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={FolderOpen}
+                    onClick={() => onLoad(d.name)}
+                    disabled={isLoading || isDeleting}
+                    testid={`builder-draft-load-${d.name}`}
+                  >
+                    Load
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon={Trash2}
+                    onClick={() => onDelete(d.name)}
+                    disabled={isDeleting}
+                    testid={`builder-draft-delete-${d.name}`}
+                  >
+                    {isDeleting ? 'Deleting…' : 'Delete'}
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Card>
+  )
+}
+
 /* ------------------------------------------------------------ SkillBuilder */
 export function SkillBuilder() {
   const navigate = useNavigate()
@@ -315,6 +469,8 @@ export function SkillBuilder() {
   const [busy, setBusy] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [dedupe, setDedupe] = useState<any[] | null>(null)
+  const drafts = useApi(() => api.drafts(), [])
+  const [deletingName, setDeletingName] = useState<string | null>(null)
 
   const set = <K extends keyof Form>(key: K, v: Form[K]) =>
     setForm((f) => ({ ...f, [key]: v }))
@@ -376,8 +532,46 @@ export function SkillBuilder() {
 
   const saveDraft = (quarantine?: boolean) =>
     action(quarantine ? 'quarantine' : 'draft', async () => {
-      await api.saveDraft({ name: form.name || 'untitled-skill', payload: { ...form, status: quarantine ? 'quarantined' : 'draft' } })
+      const name = form.name || 'untitled-skill'
+      const payload = { ...form, status: quarantine ? 'quarantined' : 'draft' }
+      await api.saveDraft({ name, payload })
+      // Mirror a snapshot to localStorage so the draft can be reloaded later.
+      // The server stores authoritative metadata; the full form is browser-side.
+      writeDraftSnapshot(name, payload)
+      await drafts.refetch()
       toast(quarantine ? 'Saved to quarantine queue' : 'Draft saved')
+    })
+
+  const loadDraft = (name: string) =>
+    action('load-draft', async () => {
+      const snapshot = readDraftSnapshot(name)
+      if (!snapshot) {
+        toast(`No local snapshot for "${name}" — metadata only.`, 'amber')
+        return
+      }
+      setForm(snapshot)
+      setChecks({ checks: [] })
+      setDedupe(null)
+      setStep(0)
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+      } catch {
+        /* noop */
+      }
+      toast(`Loaded draft "${name}"`, 'emerald')
+    })
+
+  const deleteDraft = (name: string) =>
+    action('delete-draft', async () => {
+      setDeletingName(name)
+      try {
+        await api.deleteDraft(name)
+        clearDraftSnapshot(name)
+        await drafts.refetch()
+        toast(`Deleted draft "${name}"`, 'emerald')
+      } finally {
+        setDeletingName(null)
+      }
     })
 
   const create = () =>
@@ -692,6 +886,18 @@ export function SkillBuilder() {
           Preview
         </Button>
       </div>
+
+      {/* Saved drafts — list, load, delete */}
+      <DraftsList
+        drafts={(drafts.data ?? []) as any[]}
+        loading={drafts.loading}
+        error={drafts.error}
+        busyAction={busy}
+        deletingName={deletingName}
+        onRefresh={drafts.refetch}
+        onLoad={loadDraft}
+        onDelete={deleteDraft}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[210px_minmax(0,1fr)_380px]">
         {/* Stepper */}

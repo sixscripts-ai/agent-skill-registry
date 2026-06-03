@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { NAV, BOTTOM_NAV, cn } from '~/lib/meta'
 import { api } from '~/lib/api'
-import { Button, useToast } from '~/components/ui'
+import { useToast } from '~/components/ui'
 import { LibrarianPanel } from '~/components/LibrarianPanel'
 
 function useActivePath() {
@@ -106,26 +106,7 @@ function useQuickActions() {
   return { actions, busy }
 }
 
-function QuickActionsBar() {
-  const { actions, busy } = useQuickActions()
-  return (
-    <div className="hidden items-center gap-1.5 lg:flex">
-      {actions.slice(0, 4).map((a) => (
-        <Button
-          key={a.key}
-          size="sm"
-          variant="subtle"
-          icon={a.icon}
-          onClick={a.run}
-          disabled={busy === a.key}
-          testid={`quick-${a.key}`}
-        >
-          {a.label}
-        </Button>
-      ))}
-    </div>
-  )
-}
+// QuickActionsBar removed — actions live in the dropdown only to reduce topbar clutter
 
 function QuickActionsMenu() {
   const { actions, busy } = useQuickActions()
@@ -269,8 +250,42 @@ function HealthFooter() {
         </span>
       </div>
       <p className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-slate-600">
-        {mode === 'deployed-demo' ? 'simulated runtime mode' : mode}
+        {mode === 'deployed-demo' ? 'Demo Mode · simulated runtime' : mode}
       </p>
+    </div>
+  )
+}
+
+/* -------------------------------------------------------- DynamicBreadcrumb */
+const ROUTE_LABELS: Record<string, string> = {
+  '/': 'dashboard',
+  '/skills': 'skills',
+  '/builder': 'builder',
+  '/console': 'console',
+  '/sync': 'sync',
+  '/history': 'history',
+  '/providers': 'providers',
+  '/mcp': 'mcp',
+  '/governance': 'governance',
+  '/evals': 'evals',
+  '/logs': 'logs',
+  '/settings': 'settings',
+}
+
+function DynamicBreadcrumb({ pathname }: { pathname: string }) {
+  const segment = Object.entries(ROUTE_LABELS).find(
+    ([prefix]) => pathname === prefix || pathname.startsWith(prefix + '/')
+  )
+  const label = (segment?.[1] ?? pathname.replace('/', '')) || 'dashboard'
+  return (
+    <div className="flex items-center gap-1.5 font-mono text-xs text-slate-600">
+      <span>~/ai-skills</span>
+      {label !== 'dashboard' && (
+        <>
+          <span className="text-slate-700">/</span>
+          <span className="text-slate-400">{label}</span>
+        </>
+      )}
     </div>
   )
 }
@@ -285,6 +300,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setDrawerOpen(false)
   }, [pathname])
+
+  // Global '?' shortcut to toggle Librarian
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return
+      if (e.key === '?') {
+        e.preventDefault()
+        setLibrarianOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   return (
     <div className="min-h-screen bg-ink-950 text-slate-200">
@@ -357,24 +387,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main */}
       <div className="lg:pl-64">
-        {/* Desktop quick-action bar */}
+        {/* Desktop topbar — breadcrumb left, actions + Librarian right */}
         <div className="sticky top-0 z-20 hidden h-16 items-center justify-between border-b border-white/10 bg-black/50 px-6 backdrop-blur-xl lg:flex">
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="font-mono text-xs text-slate-600">~/ai-skills</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <QuickActionsBar />
+          <DynamicBreadcrumb pathname={pathname} />
+          <div className="flex items-center gap-2">
             <QuickActionsMenu />
 
-            {/* Summon Librarian — omo.dev style agent explainer (#1 + #5) */}
+            {/* Summon Librarian */}
             <button
-              onClick={() => setLibrarianOpen(true)}
+              onClick={() => setLibrarianOpen((o) => !o)}
               className="flex h-9 items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 text-[13px] font-medium text-cyan-300 transition-colors hover:bg-cyan-500/20 hover:text-cyan-200"
               data-testid="summon-librarian"
-              title="Summon Librarian — ask what anything does and how to use it"
+              title="Summon Librarian (press ? anywhere)"
             >
               <BookOpen size={15} />
               <span className="hidden sm:inline">Librarian</span>
+              <kbd className="ml-0.5 hidden rounded border border-cyan-500/30 bg-cyan-500/10 px-1 py-0.5 text-[9px] font-mono text-cyan-500 sm:inline">?</kbd>
             </button>
           </div>
         </div>
