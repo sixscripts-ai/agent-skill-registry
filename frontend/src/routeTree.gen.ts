@@ -21,6 +21,7 @@ import { Route as EvalsRouteImport } from './routes/evals'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as CliRouteImport } from './routes/cli'
 import { Route as BuilderRouteImport } from './routes/builder'
+import { Route as OrchestratorRouteImport } from './routes/orchestrator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as SkillsSkillIdRouteImport } from './routes/skills/$skillId'
@@ -85,6 +86,11 @@ const BuilderRoute = BuilderRouteImport.update({
   path: '/builder',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrchestratorRoute = OrchestratorRouteImport.update({
+  id: '/orchestrator',
+  path: '/orchestrator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -104,6 +110,7 @@ const SkillsSkillIdRoute = SkillsSkillIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/orchestrator': typeof OrchestratorRoute
   '/cli': typeof CliRoute
   '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/orchestrator': typeof OrchestratorRoute
   '/cli': typeof CliRoute
   '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/orchestrator': typeof OrchestratorRoute
   '/cli': typeof CliRoute
   '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/builder'
+    | '/orchestrator'
     | '/cli'
     | '/console'
     | '/evals'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/builder'
+    | '/orchestrator'
     | '/cli'
     | '/console'
     | '/evals'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/builder'
+    | '/orchestrator'
     | '/cli'
     | '/console'
     | '/evals'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
+  OrchestratorRoute: typeof OrchestratorRoute
   CliRoute: typeof CliRoute
   ConsoleRoute: typeof ConsoleRoute
   EvalsRoute: typeof EvalsRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orchestrator': {
+      id: '/orchestrator'
+      path: '/orchestrator'
+      fullPath: '/orchestrator'
+      preLoaderRoute: typeof OrchestratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -338,6 +358,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
+  OrchestratorRoute: OrchestratorRoute,
   CliRoute: CliRoute,
   ConsoleRoute: ConsoleRoute,
   EvalsRoute: EvalsRoute,
