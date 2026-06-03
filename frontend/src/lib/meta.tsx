@@ -12,6 +12,7 @@ import {
   ScrollText,
   Settings,
   Workflow,
+  Store,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -24,6 +25,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, short: 'Dashboard' },
       { to: '/skills', label: 'Skill Registry', icon: Library, short: 'Registry' },
+      { to: '/marketplace', label: 'Marketplace', icon: Store, short: 'Marketplace' },
       { to: '/builder', label: 'Skill Builder', icon: Wand2, short: 'Builder' },
       { to: '/orchestrator', label: 'Orchestrator', icon: Workflow, short: 'Orchestrator' },
     ],

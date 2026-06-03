@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProvidersRouteImport } from './routes/providers'
+import { Route as OrchestratorRouteImport } from './routes/orchestrator'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LogsRouteImport } from './routes/logs'
 import { Route as IntegrationsRouteImport } from './routes/integrations'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -21,7 +23,6 @@ import { Route as EvalsRouteImport } from './routes/evals'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as CliRouteImport } from './routes/cli'
 import { Route as BuilderRouteImport } from './routes/builder'
-import { Route as OrchestratorRouteImport } from './routes/orchestrator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as SkillsSkillIdRouteImport } from './routes/skills/$skillId'
@@ -41,9 +42,19 @@ const ProvidersRoute = ProvidersRouteImport.update({
   path: '/providers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrchestratorRoute = OrchestratorRouteImport.update({
+  id: '/orchestrator',
+  path: '/orchestrator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceRoute = MarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogsRoute = LogsRouteImport.update({
@@ -86,11 +97,6 @@ const BuilderRoute = BuilderRouteImport.update({
   path: '/builder',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrchestratorRoute = OrchestratorRouteImport.update({
-  id: '/orchestrator',
-  path: '/orchestrator',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -110,7 +116,6 @@ const SkillsSkillIdRoute = SkillsSkillIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
-  '/orchestrator': typeof OrchestratorRoute
   '/cli': typeof CliRoute
   '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
@@ -118,7 +123,9 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/integrations': typeof IntegrationsRoute
   '/logs': typeof LogsRoute
+  '/marketplace': typeof MarketplaceRoute
   '/mcp': typeof McpRoute
+  '/orchestrator': typeof OrchestratorRoute
   '/providers': typeof ProvidersRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
@@ -128,7 +135,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
-  '/orchestrator': typeof OrchestratorRoute
   '/cli': typeof CliRoute
   '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
@@ -136,7 +142,9 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/integrations': typeof IntegrationsRoute
   '/logs': typeof LogsRoute
+  '/marketplace': typeof MarketplaceRoute
   '/mcp': typeof McpRoute
+  '/orchestrator': typeof OrchestratorRoute
   '/providers': typeof ProvidersRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
@@ -147,7 +155,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
-  '/orchestrator': typeof OrchestratorRoute
   '/cli': typeof CliRoute
   '/console': typeof ConsoleRoute
   '/evals': typeof EvalsRoute
@@ -155,7 +162,9 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/integrations': typeof IntegrationsRoute
   '/logs': typeof LogsRoute
+  '/marketplace': typeof MarketplaceRoute
   '/mcp': typeof McpRoute
+  '/orchestrator': typeof OrchestratorRoute
   '/providers': typeof ProvidersRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
@@ -167,7 +176,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/builder'
-    | '/orchestrator'
     | '/cli'
     | '/console'
     | '/evals'
@@ -175,7 +183,9 @@ export interface FileRouteTypes {
     | '/history'
     | '/integrations'
     | '/logs'
+    | '/marketplace'
     | '/mcp'
+    | '/orchestrator'
     | '/providers'
     | '/settings'
     | '/sync'
@@ -185,7 +195,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/builder'
-    | '/orchestrator'
     | '/cli'
     | '/console'
     | '/evals'
@@ -193,7 +202,9 @@ export interface FileRouteTypes {
     | '/history'
     | '/integrations'
     | '/logs'
+    | '/marketplace'
     | '/mcp'
+    | '/orchestrator'
     | '/providers'
     | '/settings'
     | '/sync'
@@ -203,7 +214,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/builder'
-    | '/orchestrator'
     | '/cli'
     | '/console'
     | '/evals'
@@ -211,7 +221,9 @@ export interface FileRouteTypes {
     | '/history'
     | '/integrations'
     | '/logs'
+    | '/marketplace'
     | '/mcp'
+    | '/orchestrator'
     | '/providers'
     | '/settings'
     | '/sync'
@@ -222,7 +234,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
-  OrchestratorRoute: typeof OrchestratorRoute
   CliRoute: typeof CliRoute
   ConsoleRoute: typeof ConsoleRoute
   EvalsRoute: typeof EvalsRoute
@@ -230,7 +241,9 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   IntegrationsRoute: typeof IntegrationsRoute
   LogsRoute: typeof LogsRoute
+  MarketplaceRoute: typeof MarketplaceRoute
   McpRoute: typeof McpRoute
+  OrchestratorRoute: typeof OrchestratorRoute
   ProvidersRoute: typeof ProvidersRoute
   SettingsRoute: typeof SettingsRoute
   SyncRoute: typeof SyncRoute
@@ -261,11 +274,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProvidersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orchestrator': {
+      id: '/orchestrator'
+      path: '/orchestrator'
+      fullPath: '/orchestrator'
+      preLoaderRoute: typeof OrchestratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketplace': {
+      id: '/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof MarketplaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logs': {
@@ -324,13 +351,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orchestrator': {
-      id: '/orchestrator'
-      path: '/orchestrator'
-      fullPath: '/orchestrator'
-      preLoaderRoute: typeof OrchestratorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -358,7 +378,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
-  OrchestratorRoute: OrchestratorRoute,
   CliRoute: CliRoute,
   ConsoleRoute: ConsoleRoute,
   EvalsRoute: EvalsRoute,
@@ -366,7 +385,9 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   IntegrationsRoute: IntegrationsRoute,
   LogsRoute: LogsRoute,
+  MarketplaceRoute: MarketplaceRoute,
   McpRoute: McpRoute,
+  OrchestratorRoute: OrchestratorRoute,
   ProvidersRoute: ProvidersRoute,
   SettingsRoute: SettingsRoute,
   SyncRoute: SyncRoute,
